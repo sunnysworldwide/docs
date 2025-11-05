@@ -1,0 +1,311 @@
+---
+title: 'List HubSpot Tickets'
+openapi: 'GET /hubspot/tickets/list/{startDate}/{endDate}/{startIndex}/{endIndex}'
+---
+
+Retrieves a list of HubSpot tickets within the specified date range and pagination window. Supports filtering by agent, feedback category, search keyword, and department code.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter   | Type    | Required | Description                              |
+|-------------|---------|----------|------------------------------------------|
+| startDate   | string  | Yes      | Start date for filtering tickets (inclusive) |
+| endDate     | string  | Yes      | End date for filtering tickets (inclusive) |
+| startIndex  | integer | Yes      | Starting index for pagination             |
+| endIndex    | integer | Yes      | Ending index for pagination (max page size = 50) |
+
+#### Path Parameter Format
+- **Date Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Pagination**: Zero-based indexing
+- **Page Size**: Automatically limited to 50 items max
+
+### Query Parameters
+
+| Parameter         | Type    | Required | Description                              |
+|-------------------|---------|----------|------------------------------------------|
+| agentInvolved    | string  | No       | Filter by agent (from filters endpoint)  |
+| feedbackCategory | string  | No       | Filter by category (from filters endpoint) |
+| search            | string  | No       | Search keyword across multiple fields    |
+| departmentCode   | string  | No       | Valid department code filter              |
+| closedOnly        | string  | No       | "true"/"false" - return only closed tickets |
+
+#### Query Parameter Details
+- **agentInvolved**: Must match value from `/hubspot/tickets/list/filters`
+- **feedbackCategory**: Must match value from `/hubspot/tickets/list/filters`
+- **search**: Searches in `content`, `chauffeur_name`, `passenger_name`, and `subject`
+- **departmentCode**: Must be valid department code in system
+- **closedOnly**: Default "false", use "true" for closed tickets only
+
+## Response
+
+### 200 OK - Successfully retrieved filtered ticket list
+
+```json
+{
+  "message": "",
+  "data": [
+    {
+      "ticketId": "12345678",
+      "subject": "Late Driver - Airport Pickup",
+      "feedbackCategory": "Late Driver",
+      "agentInvolved": "abdullah",
+      "status": "closed",
+      "createdAt": "2025-10-01T10:30:00.000Z",
+      "updatedAt": "2025-10-01T14:45:00.000Z",
+      "priority": "high",
+      "departmentCode": "OPS",
+      "passenger_name": "John Smith",
+      "chauffeur_name": "Mike Johnson"
+    },
+    {
+      "ticketId": "12346",
+      "subject": "Vehicle Maintenance Required",
+      "feedbackCategory": "Vehicle Issue",
+      "agentInvolved": "jane-smith",
+      "status": "open",
+      "createdAt": "2025-10-02T09:15:00.000Z",
+      "updatedAt": "2025-10-02T11:30:00.000Z",
+      "priority": "medium",
+      "departmentCode": "MA",
+      "content": "Customer reported vehicle making unusual noises"
+    }
+  ]
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_FILTER",
+    "message": "Invalid filter or pagination parameters"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get first 10 tickets for date range
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/2025-10-01/2025-10-20/0/50' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+'
+```
+
+### Filter by agent and category
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/2025-10-01/2025-10-20/0/50?agentInvolved=abdullah&feedbackCategory=Late Driver' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+```
+
+### Search with keyword
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/2025-10-01/050?search=airport delay&startIndex=0&endIndex=25' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+```
+
+### Filter by department and closed tickets
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/2025-10-01/050?departmentCode=OPS&closedOnly=true' \
+  -H 'Authorization oBearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### Ticket Object Fields
+| Field            | Type    | Description                              |
+|------------------|---------|------------------------------------------|
+| ticketId         | string  | Unique HubSpot ticket identifier          |
+| subject          | string  | Ticket subject line                       |
+| feedbackCategory | string  | Feedback category assigned to ticket      |
+| agentInvolved    | string  | Agent handling the ticket                 |
+| status           | string  | Current ticket status (open, closed, etc) |
+| createdAt        | string  | Ticket creation timestamp (ISO 8601)     |
+| updatedAt        | string  | Last update timestamp (ISO 8601)         |
+| priority         | string  | Ticket priority level                     |
+| departmentCode   | string  | Department code associated with ticket    |
+| passenger_name   | string  | Passenger name (if available)             |
+| chauffeur_name   | string  | Chauffeur name (if available)             |
+| content          | string  | Ticket content/description                |
+
+## Use Cases
+
+- **Ticket Dashboard**: Display paginated ticket lists
+- **Filter Management**: Apply multiple filters simultaneously
+- **Search Functionality**: Search across ticket content and metadata
+- **Department Views**: Show tickets by department
+- **Agent Workloads**: View tickets assigned to specific agents
+
+## Implementation Examples
+
+### React Component with Pagination
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function TicketList() {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [filters, setFilters] = useState({});
+
+  const pageSize = 25;
+  const startDate = '2025-10-01';
+  const endDate = '2025-10-31';
+
+  useEffect(() => {
+    fetchTickets();
+  }, [page, filters]);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    const startIndex = page * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    const queryParams = new URLSearchParams(filters).toString();
+    const url = `/hubspot/tickets/list/${startDate}/${endDate}/${startIndex}/${endIndex}?${queryParams}`;
+    
+    try {
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setTickets(data.data);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <TicketFilters onFilterChange={setFilters} />
+      {loading ? <LoadingSpinner /> : <TicketTable tickets={tickets} />}
+      <Pagination page={page} onPageChange={setPage} />
+    </div>
+  );
+}
+```
+
+### Advanced Filtering
+```javascript
+const buildFilterQuery = (filters) => {
+  const params = new URLSearchParams();
+  
+  if (filters.agent) params.append('agentInvolved', filters.agent);
+  if (filters.category) params.append('feedbackCategory', filters.category);
+  if (filters.search) params.append('search', filters.search);
+  if (filters.department) params.append('departmentCode', filters.department);
+  if (filters.closedOnly) params.append('closedOnly', 'true');
+  
+  return params.toString();
+};
+
+// Usage
+const filterQuery = buildFilterQuery({
+  agent: 'abdullah',
+  category: 'Late Driver',
+  search: 'airport',
+  department: 'OPS',
+  closedOnly: 'false'
+});
+```
+
+## Pagination Logic
+
+### Calculate Total Pages
+```javascript
+const calculatePagination = (totalCount, pageSize) => {
+  return {
+    totalPages: Math.ceil(totalCount / pageSize),
+    hasNextPage: (page + 1) * pageSize < totalCount,
+    hasPrevPage: page > 0,
+    startIndex: page * pageSize,
+    endIndex: Math.min((page + 1) * pageSize, totalCount)
+  };
+};
+```
+
+### Pagination Controls
+```jsx
+function Pagination({ page, onPageChange, hasNextPage, hasPrevPage }) {
+  return (
+    <div className="pagination">
+      <button 
+        disabled={!hasPrevPage} 
+        onClick={() => onPageChange(page - 1)}
+      >
+        Previous
+      </button>
+      <span>Page {page + 1}</span>
+      <button 
+        disabled={!hasNextPage} 
+        onClick={() => onPageChange(page + 1)}
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+1. **Pagination**: Use reasonable page sizes (10-50 items)
+2. **Filtering**: Validate filter values before API calls
+3. **Search**: Debounce search input to avoid excessive API calls
+4. **Caching**: Cache ticket data for short periods
+5. **Error Handling**: Handle pagination and filter errors gracefully
+
+## Performance Considerations
+
+- **Page Size**: Larger pages take longer to load
+- **Filter Combinations**: Multiple filters may impact performance
+- **Date Range**: Very large date ranges may be slow
+- **Search**: Full-text search can be resource-intensive
+
+## Related Endpoints
+
+- Use `/hubspot/tickets/list/filters` to get filter options
+- Use `/hubspot/ticket-details/{ticketId}` for full ticket details
+- Use `/hubspot/tickets/list/export` to export filtered results
+
+## Notes
+
+- Page size automatically limited to 50 items maximum
+- Filter values must match exactly with values from filters endpoint
+- Search is case-insensitive but matches partial words
+- Date range is inclusive of both start and end dates
+- Results are sorted by creation date (newest first) by default

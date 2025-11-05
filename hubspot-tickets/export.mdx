@@ -1,0 +1,377 @@
+---
+title: 'Export HubSpot Tickets'
+openapi: 'POST /hubspot/tickets/list/export'
+---
+
+Exports HubSpot tickets based on selected filters, columns, and department. The response returns a downloadable file (Excel, CSV, or JSON) depending on the requested format. Requires authentication. If no format is specified, defaults to xlsx.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "format": "xlsx",
+  "columns": [
+    "ticketId",
+    "subject",
+    "feedbackCategory",
+    "agentInvolved",
+    "createdAt",
+    "status",
+    "priority",
+    "passenger_name",
+    "chauffeur_name"
+  ],
+  "departmentCode": "OPS"
+}
+```
+
+### Request Body Schema
+
+| Field          | Type   | Required | Description                              |
+|----------------|--------|----------|------------------------------------------|
+| format         | string | Yes      | Output file format (xlsx, csv, json)     |
+| columns        | array  | Yes      | List of ticket fields to include         |
+| departmentCode | string | No       | Department code to filter tickets         |
+
+#### Field Details
+
+**format** (enum)
+- `xlsx` - Microsoft Excel format
+- `csv` - Comma-separated values format  
+- `json` - JSON array format
+
+**columns** (array of strings)
+- Available columns include: `ticketId`, `subject`, `content`, `feedbackCategory`, `agentInvolved`, `status`, `priority`, `createdAt`, `updatedAt`, `closedAt`, `departmentCode`, `passenger_name`, `passenger_email`, `passenger_phone`, `chauffeur_name`, `chauffeur_id`, `reservation_id`, `pickup_location`, `dropoff_location`, `scheduled_time`, `actual_time`, `delay_minutes`, `resolution_notes`, `tags`
+
+**departmentCode** (string)
+- Must be valid department code in system
+- Filters exported tickets to specific department
+- Optional - if omitted, exports all departments
+
+## Response
+
+### 200 OK - Successfully generated export file
+
+**Headers:**
+```
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="hubspot-tickets-2025-10-01.xlsx"
+Content-Length: 12345
+```
+
+**Body:** Binary file content (Excel, CSV, or JSON format)
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Invalid request body or validation error"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Export to Excel with all columns
+```bash
+curl -X POST 'http://localhost:2000/hubspot/tickets/list/export' \
+  -H 'Authorization:Bearerbearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "format": "xlsx",
+    "columns": ["ticketId", "subject", "feedbackCategory", "agentInvolved", "createdAt", "status", "priority"]
+  }' \
+  --output tickets-export.xlsx
+```
+
+### Export to CSV with specific columns
+```bash
+curl -X POST 'http://localhost:2000/hubspot/tickets/list/export' \
+  -H 'Authorization oBearerbearer your-jwt-token' \
+ \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "format": "csv",
+    "columns": ["ticketId", "subject", "passenger_name", "chauffeur_name", "status"],
+    "departmentCode": "OPS"
+  }' \
+  --output tickets-export.csv
+```
+
+### Export to JSON format
+```bash
+curl -X POST 'http://localhost:2000/hubspot/tickets/list/export' \
+  -H 'Authorization oBearerbearer your-jwt-token' \
+ \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "format": "json",
+    "columns": ["ticketId", "subject", "feedbackCategory", "agentInvolved", "createdAt"],
+    "departmentCode": "OPS"
+  }' \
+  --output tickets-export.json
+```
+
+## Implementation Examples
+
+### React Export Component
+```jsx
+import React, { useState } from 'react';
+
+function TicketExport() {
+  const [exporting, setExporting] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState([
+    'ticketId', 'subject', 'feedbackCategory', 'agentInvolved', 'createdAt', 'status'
+  ]);
+  const [format, setFormat] = useState('xlsx');
+  const [departmentCode, setDepartmentCode] = useState('');
+
+  const availableColumns = [
+    { value: 'ticketId', label: 'Ticket ID' },
+    { value: 'subject', label: 'Subject' },
+    { value: 'content', label: 'Content' },
+    { value: 'feedbackCategory', label: 'Category' },
+    { value: 'agentInvolved', label: 'Agent' },
+    { value: 'status', label: 'Status' },
+    { value: 'priority', label: 'Priority' },
+    { value: 'createdAt', label: 'Created Date' },
+    { value: 'passenger_name', label: 'Passenger Name' },
+    { value: 'chauffeur_name', label: 'Chauffeur Name' }
+  ];
+
+  const handleExport = async () => {
+    setExporting(true);
+    
+    try {
+      const response = await fetch('/hubspot/tickets/list/export', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          format,
+          columns: selectedColumns,
+          departmentCode: departmentCode || undefined
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `tickets-export.${format}`;
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="ticket-export">
+      <h3>Export Tickets</h3>
+      
+      <div className="export-form">
+        <div className="form-group">
+          <label>Format:</label>
+          <select value={format} onChange={(e) => setFormat(e.target.value)}>
+            <option value="xlsx">Excel (.xlsx)</option>
+            <option value="csv">CSV (.csv)</option>
+            <option value="json">JSON (.json)</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Department (optional):</label>
+          <input 
+            type="text" 
+            value={departmentCode}
+            onChange={(e) => setDepartmentCode(e.target.value)}
+            placeholder="e.g., OPS"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Columns to export:</label>
+          <div className="column-selector">
+            {availableColumns.map(column => (
+              <label key={column.value}>
+                <input
+                  type="checkbox"
+                  checked={selectedColumns.includes(column.value)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedColumns([...selectedColumns, column.value]);
+                    } else {
+                      setSelectedColumns(selectedColumns.filter(col => col !== column.value));
+                    }
+                  }}
+                />
+                {column.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <button 
+          onClick={handleExport} 
+          disabled={exporting || selectedColumns.length === 0}
+          className="export-button"
+        >
+          {exporting ? 'Exporting...' : `Export as ${format.toUpperCase()}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Vue.js Export Function
+```javascript
+export default {
+  data() {
+    return {
+      format: 'xlsx',
+      columns: ['ticketId', 'subject', 'status'],
+      departmentCode: '',
+      exporting: false
+    };
+  },
+  methods: {
+    async exportTickets() {
+      this.exporting = true;
+      
+      try {
+        const response = await fetch('/hubspot/tickets/list/export', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            format: this.format,
+            columns: this.columns,
+            departmentCode: this.departmentCode || undefined
+          })
+        });
+
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tickets-export.${this.format}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error('Export error:', error);
+        this.$emit('error', 'Export failed');
+      } finally {
+        this.exporting = false;
+      }
+    }
+  }
+};
+```
+
+## File Format Details
+
+### Excel (.xlsx)
+- **Structure**: Worksheet with headers in first row
+- **Data Types**: Dates formatted as Excel dates, numbers as numbers
+- **Features**: Auto-sized columns, formatted headers
+- **Size**: Typically smallest for large datasets
+
+### CSV (.csv)
+- **Structure**: Comma-separated values with headers
+- **Encoding**: UTF-8 with BOM for Excel compatibility
+- **Data Types**: All values as strings
+- **Compatibility**: Works with Excel, Google Sheets, etc.
+
+### JSON (.json)
+- **Structure**: Array of ticket objects
+- **Data Types**: Preserves original data types
+- **Format**: Pretty-printed for readability
+- **Use Case**: Programmatic processing and APIs
+
+## Best Practices
+
+1. **Column Selection**: Limit columns to reduce file size
+2. **Department Filtering**: Use department filter for targeted exports
+3. **Format Choice**: Choose format based on use case (Excel for analysis, CSV for data transfer, JSON for development)
+4. **Error Handling**: Handle export failures gracefully
+5. **File Naming**: Use descriptive filenames with timestamps
+
+## Performance Considerations
+
+- **Data Volume**: Large exports may take significant time
+- **Memory Usage**: Server memory usage scales with data size
+- **Network**: File download time depends on file size
+- **Timeouts**: Very large exports may hit timeout limits
+
+## Related Endpoints
+
+- Use `/hubspot/tickets/list` to preview data before export
+- Use `/hubspot/tickets/list/filters` to understand available data
+- Use `/hubspot/ticket-details/{ticketId}` for detailed ticket information
+
+## Notes
+
+- Export includes all tickets matching department filter
+- File is generated dynamically on request
+- Export processing time depends on data volume
+- Files are not stored permanently on server
+- Maximum export size may be limited by server configuration

@@ -1,0 +1,230 @@
+---
+title: 'Get Ticket Filters'
+openapi: 'GET /hubspot/tickets/list/filters'
+---
+
+Retrieves possible filters and their values to be displayed in the frontend dropdowns. Currently supports two filter types: Agents (all agents) and Categories (all feedback categories).
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+## Response
+
+### 200 OK - Successfully retrieved filter options
+
+```json
+{
+  "message": "",
+  "data": {
+    "agents": [
+      {
+        "label": "Abdullah",
+        "value": "abdullah"
+      },
+      {
+        "label": "John Doe",
+        "value": "john-doe"
+      },
+      {
+        "label": "Jane Smith",
+        "value": "jane-smith"
+      }
+    ],
+    "categories": [
+      {
+        "label": "Late Driver",
+        "value": "Late Driver"
+      },
+      {
+        "label": "Vehicle Issue",
+        "value": "Vehicle Issue"
+      },
+      {
+        "label": "Customer Complaint",
+        "value": "Customer Complaint"
+      },
+      {
+        "label": "Billing Issue",
+        "value": "Billing Issue"
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/filters' \
+  -H 'Authorization:Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Agents Array
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| label | string | Display name for the agent               |
+| value | string | Internal value used for filtering         |
+
+### Categories Array
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| label | string | Display name for the feedback category    |
+| value | string | Internal value used for filtering         |
+
+## Use Cases
+
+- **Dropdown Population**: Populate filter dropdowns in frontend
+- **Dynamic Filtering**: Enable users to filter by agent or category
+- **Form Validation**: Validate filter values before API calls
+- **User Interface**: Build filter controls with available options
+
+## Implementation Examples
+
+### React Component Example
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function TicketFilters({ onFilterChange }) {
+  const [filters, setFilters] = useState({ agents: [], categories: [] });
+
+  useEffect(() => {
+    fetch('/hubspot/tickets/list/filters', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => response.json())
+    .then(data => setFilters(data.data));
+  }, []);
+
+  return (
+    <div className="ticket-filters">
+      <select onChange={(e) => onFilterChange('agent', e.target.value)}>
+        <option value="">All Agents</option>
+        {filters.agents.map(agent => (
+          <option key={agent.value} value={agent.value}>
+            {agent.label}
+          </option>
+        ))}
+      </select>
+      
+      <select onChange={(e) => onFilterChange('category', e.target.value)}>
+        <option value="">All Categories</option>
+        {filters.categories.map(category => (
+          <option key={category.value} value={category.value}>
+            {category.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+```
+
+### Vue.js Example
+```vue
+<template>
+  <div class="filters">
+    <select v-model="selectedAgent" @change="applyFilters">
+      <option value="">All Agents</option>
+      <option v-for="agent in filters.agents" :key="agent.value" :value="agent.value">
+        {{ agent.label }}
+      </option>
+    </select>
+    
+    <select v-model="selectedCategory" @change="applyFilters">
+      <option value="">All Categories</option>
+      <option v-for="category in filters.categories" :key="category.value" :value="category.value">
+        {{ category.label }}
+      </option>
+    </select>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      filters: { agents: [], categories: [] },
+      selectedAgent: '',
+      selectedCategory: ''
+    };
+  },
+  async created() {
+    const response = await fetch('/hubspot/tickets/list/filters', {
+      headers: { 'Authorization': `Bearer ${this.token}` }
+    });
+    this.filters = (await response.json()).data;
+  }
+};
+</script>
+```
+
+## Best Practices
+
+1. **Caching**: Cache filter data to avoid repeated API calls
+2. **Error Handling**: Handle cases where filters are unavailable
+3. **Loading States**: Show loading indicators while fetching filters
+4. **Validation**: Validate filter values before using in list API
+5. **Accessibility**: Ensure dropdowns are accessible and keyboard-navigable
+
+## Related Endpoints
+
+- Use `/hubspot/tickets/list` with filter values from this endpoint
+- Use `/hubspot/tickets/list/export` with same filter options
+- Use `/hubspot/ticket-details/{ticketId}` for individual ticket details
+
+## Notes
+
+- Agent list includes all active agents in the system
+- Categories include all feedback categories from HubSpot integration
+- Filter values are case-sensitive and must match exactly
+- This endpoint should be called before rendering filter controls
+- Data is updated in real-time as agents and categories change
+
+## Integration Guidelines
+
+### Before Using Filters
+1. Call this endpoint to get available options
+2. Store filter options in component state
+3. Use values (not labels) for API calls
+4. Validate filter values before submitting
+
+### Filter Value Mapping
+- Use `value` field for API parameters
+- Use `label` field for display text
+- Maintain mapping between labels and values
+- Handle cases where filter options change dynamically
+
+### Error Handling
+- Handle 401 errors by redirecting to login
+- Handle 500 errors with retry logic
+- Provide fallback options when filters unavailable
+- Show user-friendly error messages

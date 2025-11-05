@@ -141,6 +141,20 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "HubSpot Tickets",
+        "groups": [
+          {
+            "group": "Ticket Management",
+            "pages": [
+              "hubspot-tickets/list-filters",
+              "hubspot-tickets/list",
+              "hubspot-tickets/ticket-details",
+              "hubspot-tickets/export"
+            ]
+          }
+        ]
       }
     ]
   },

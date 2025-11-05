@@ -1,0 +1,327 @@
+---
+title: 'Get Ticket Details'
+openapi: 'GET /hubspot/ticket-details/{ticketId}'
+---
+
+Retrieves the full details of a single HubSpot ticket using its unique ticketId. Requires authentication and a valid HubSpot ticket ID. The endpoint validates the ticket ID before fetching data and returns complete ticket metadata including content, related contacts, categories, and assigned agent.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| ticketId  | string | Yes      | Unique HubSpot ticket identifier          |
+
+#### Parameter Details
+- **ticketId**: Must be a valid HubSpot ticket ID
+- **Format**: String identifier from HubSpot system
+- **Validation**: Endpoint validates ticket ID before processing
+
+## Response
+
+### 200 OK - Successfully retrieved ticket details
+
+```json
+{
+  "message": "",
+  "data": {
+    "ticketId": "12345678",
+    "subject": "Late Driver - Airport Pickup",
+    "content": "Customer reported that driver was 45 minutes late for scheduled airport pickup. Passenger had to wait at arrivals and missed important meeting. Requesting refund for inconvenience.",
+    "feedbackCategory": "Late Driver",
+    "agentInvolved": "abdullah",
+    "status": "closed",
+    "priority": "high",
+    "createdAt": "2025-10-01T10:30:00.000Z",
+    "updatedAt": "2025-10-01T14:45:00.000Z",
+    "closedAt": "2025-10-01T14:45:00.000Z",
+    "departmentCode": "OPS",
+    "passenger_name": "John Smith",
+    "passenger_email": "john.smith@example.com",
+    "passenger_phone": "+1-555-123-",
+    "chauffeur_name": "Mike Johnson",
+    "chauffeur_id": "CH78",
+    "reservation_id": "RES",
+    "pickup_location": "J",
+    "dropoff_location": "o",
+    "scheduled_time": "2025-10-01T09:00:00.000Z",
+    "actual_time": "2025-10-01T09:45:00.000Z",
+    "delay_minutes": 45,
+    "resolution_notes": "Apology issued, partial refund processed, driver coached on punctuality",
+    "tags": ["urgent", "airport", "refund"],
+    "custom_properties": {
+      "vehicle_type": "Luxury Sedan",
+      "service_level": "Premium",
+      "complaint_type": "delay"
+    },
+    "associated_contacts": [
+      {
+        "id": "contact-123",
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "type": "passenger"
+      },
+      {
+        "id": "contact-123",
+        "name": "Mike Johnson",
+        "email": "mike.johnson@company.com",
+        "type": "chauffeur"
+      }
+    ],
+    "activity_log": [
+      {
+        "timestamp": "2025-10-01T10:30:00.000Z",
+        "action": "created",
+        "user": "system",
+        "notes": "Ticket automatically created from feedback form"
+      },
+      {
+        "timestamp": "2025-10-01T11:00:00.000Z",
+        "action": "assigned",
+        "user": "admin",
+        "notes": "Assigned to agent abdullah"
+      },
+      {
+        "timestamp": "2025-10-01T14:45:00.000Z",
+        "action": "resolved",
+        "user": "abdullah",
+        "notes": "Issue resolved with customer satisfaction"
+      }
+    ]
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_TICKET_ID",
+    "message": "Invalid or missing ticket ID"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "TICKET_NOT_FOUND",
+    "message": "Ticket not found"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/hubspot/ticket-details/123456' \
+  -H 'Authorization:Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Core Ticket Information
+| Field            | Type    | Description                              |
+|------------------|---------|------------------------------------------|
+| ticketId         | string  | Unique HubSpot ticket identifier          |
+| subject          | string  | Ticket subject line                       |
+| content          | string  | Full ticket content/description          |
+| feedbackCategory | string  | Feedback category assigned to ticket      |
+| agentInvolved    | string  | Agent handling the ticket                 |
+| status           | string  | Current ticket status                     |
+| priority         | string  | Ticket priority level (low, medium, high) |
+
+### Timestamps
+| Field     | Type    | Description                              |
+|-----------|---------|------------------------------------------|
+| createdAt | string  | Ticket creation timestamp (ISO 8601)     |
+| updatedAt | string  | Last update timestamp (ISO 8601)         |
+| closedAt  | string  | Ticket closure timestamp (ISO 8601)      |
+
+### Service Information
+| Field           | Type    | Description                              |
+|-----------------|---------|------------------------------------------|
+| departmentCode  | string  | Department code associated with ticket    |
+| reservation_id  | string  | Associated reservation ID                |
+| pickup_location | string  | Pickup location details                  |
+| dropoff_location| string  | Dropoff location details                 |
+| scheduled_time  | string  | Scheduled service time (ISO 8601)        |
+| actual_time     | string  | Actual service time (ISO 8601)           |
+| delay_minutes   | integer | Delay in minutes (if applicable)         |
+
+### People Information
+| Field            | Type    | Description                              |
+|------------------|---------|------------------------------------------|
+| passenger_name   | string  | Passenger name                           |
+| passenger_email  | string  | Passenger email address                  |
+| passenger_phone  | string  | Passenger phone number                   |
+| chauffeur_name   | string  | Chauffeur name                           |
+| chauffeur_id     | string  | Chauffeur ID                             |
+
+### Additional Information
+| Field            | Type    | Description                              |
+|------------------|---------|------------------------------------------|
+| resolution_notes | string  | Notes about ticket resolution            |
+| tags             | array   | Tags associated with ticket              |
+| custom_properties| object  | Custom HubSpot properties                |
+| associated_contacts| array | Related contact information             |
+| activity_log     | array   | Ticket activity history                  |
+
+## Use Cases
+
+- **Ticket Details View**: Display complete ticket information
+- **Customer Service**: Provide detailed ticket history
+- **Analytics**: Analyze ticket patterns and details
+- **Reporting**: Generate detailed ticket reports
+- **Audit Trail**: Track ticket activity and changes
+
+## Implementation Examples
+
+### React Ticket Detail Component
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function TicketDetail({ ticketId }) {
+  const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTicketDetails();
+  }, [ticketId]);
+
+  const fetchTicketDetails = async () => {
+    try {
+      const response = await fetch(`/hubspot/ticket-details/${ticketId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setTicket(data.data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+  if (!ticket) return <div>No ticket found</div>;
+
+  return (
+    <div className="ticket-detail">
+      <TicketHeader ticket={ticket} />
+      <TicketContent ticket={ticket} />
+      <TicketActivity activity={ticket.activity_log} />
+      <TicketContacts contacts={ticket.associated_contacts} />
+    </div>
+  );
+}
+```
+
+### Activity Timeline Component
+```jsx
+function ActivityTimeline({ activity }) {
+  return (
+    <div className="activity-timeline">
+      <h3>Activity Log</h3>
+      {activity.map((item, index) => (
+        <div key={index} className="activity-item">
+          <div className="activity-time">
+            {new Date(item.timestamp).toLocaleString()}
+          </div>
+          <div className="activity-action">{item.action}</div>
+          <div className="activity-user">{item.user}</div>
+          <div className="activity-notes">{item.notes}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Ticket Status Badge
+```jsx
+function TicketStatus({ status }) {
+  const statusConfig = {
+    'open': { color: 'orange', label: 'Open' },
+    'closed': { color: 'green', label: 'Closed' },
+    'pending': { color: 'blue', label: 'Pending' },
+    'escalated': { color: 'red', label: 'Escalated' }
+  };
+
+  const config = statusConfig[status] || { color: 'gray', label: status };
+
+  return (
+    <span className={`status-badge status-${config.color}`}>
+      {config.label}
+    </span>
+  );
+}
+```
+
+## Best Practices
+
+1. **Error Handling**: Handle ticket not found and invalid ID cases
+2. **Loading States**: Show loading indicators while fetching details
+3. **Data Validation**: Validate ticket ID format before API call
+4. **Caching**: Cache ticket details for short periods
+5. **Responsive Design**: Ensure detail view works on mobile devices
+
+## Performance Considerations
+
+- **Data Size**: Ticket details can be large with activity logs
+- **API Calls**: Minimize unnecessary detail API calls
+- **Images**: Handle any associated images efficiently
+- **Real-time Updates**: Consider WebSocket for live updates
+
+## Related Endpoints
+
+- Use `/hubspot/tickets/list` to browse and find tickets
+- Use `/hubspot/tickets/list/filters` for filter options
+- Use `/hubspot/tickets/list/export` to export ticket data
+
+## Notes
+
+- Ticket details include all available HubSpot properties
+- Activity log shows chronological ticket history
+- Associated contacts include passengers, chauffeurs, and staff
+- Custom properties vary based on HubSpot configuration
+- Response time depends on ticket complexity and activity log size
