@@ -1,0 +1,171 @@
+---
+title: 'Clients with Lowest Resolution Rates'
+openapi: 'GET /email-meter/stats/clients/lowest-resolved/{startDate}/{endDate}'
+---
+
+Returns the top 3 client domains that have the highest number of unresolved conversations within the given date range. A conversation is considered unresolved if it does not contain a resolved category.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the range (YYYY-MM-DD)    |
+| endDate   | string | Yes      | End date for the range (YYYY-MM-DD)      |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved clients with lowest resolved conversations
+
+```json
+{
+  "message": "",
+  "data": {
+    "clientsByLowestResolved": [
+      {
+        "domain": "example.com",
+        "count": 15
+      },
+      {
+        "domain": "client.org",
+        "count": 12
+      },
+      {
+        "domain": "mail.com",
+        "count": 8
+      }
+    ]
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "Invalid date range or bad request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/clients/lowest-resolved/2025-10-01/2025-10-20' \
+  -H 'Authorization: oBearerbearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Clients by Lowest Resolved Array
+| Field | Type    | Description                              |
+|-------|---------|------------------------------------------|
+| domain| string  | The client's email domain                |
+| count | integer | Number of unresolved conversations        |
+
+## Use Cases
+
+- **Problem Identification**: Identify clients with resolution issues
+- **Service Improvement**: Target improvements for specific domains
+- **Quality Assurance**: Monitor resolution quality by client
+- **Relationship Management**: Address client-specific issues
+- **Process Optimization**: Identify patterns in unresolved conversations
+
+## Analysis Examples
+
+### Resolution Rate Calculation
+```javascript
+const calculateResolutionRate = (unresolvedData, totalData) => {
+  return unresolvedData.clientsByLowestResolved.map(client => {
+    const totalClient = totalData.topClients.find(c => c.domain === client.domain);
+    const totalConversations = totalClient ? totalClient.count : 0;
+    const resolutionRate = totalConversations > 0 ? 
+      ((totalConversations - client.count) / totalConversations) * 100 : 0;
+    
+    return {
+      domain: client.domain,
+      unresolved: client.count,
+      total: totalConversations,
+      resolutionRate: resolutionRate.toFixed(2)
+    };
+  });
+};
+```
+
+### Trend Monitoring
+```javascript
+const monitorUnresolvedTrends = (currentData, previousData) => {
+  return currentData.clientsByLowestResolved.map(client => {
+    const previousClient = previousData.clientsByLowestResolved.find(c => c.domain === client.domain);
+    const previousCount = previousClient ? previousClient.count : 0;
+    const trend = client.count > previousCount ? 'worsening' : 
+                  client.count < previousCount ? 'improving' : 'stable';
+    const change = client.count - previousCount;
+    
+    return {
+      ...client,
+      previousCount,
+      change,
+      trend
+    };
+  });
+};
+```
+
+## Best Practices
+
+1. **Regular Monitoring**: Track unresolved conversations weekly
+2. **Root Cause Analysis**: Investigate why certain domains have more unresolved issues
+3. **Client Communication**: Proactively address issues with problematic domains
+4. **Process Review**: Review resolution processes for specific client types
+5. **Performance Tracking**: Monitor improvement over time
+
+## Related Endpoints
+
+- Use `/email-meter/stats/clients/top-domains` for overall domain volume
+- Use `/email-meter/stats/clients/response-times` for domain performance metrics
+- Use `/email-meter/stats/resolved-times` for overall resolution analysis
+
+## Notes
+
+- Only domains with unresolved conversations are included
+- Unresolved conversations are those without resolved status
+- Data helps identify clients needing special attention
+- Results are sorted by highest unresolved count first
+- Limited to top 3 to focus on most critical issues

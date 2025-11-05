@@ -1,0 +1,265 @@
+---
+title: 'Client Domain Email Trends'
+openapi: 'GET /email-meter/stats/clients/incoming-emails-trend/{startDate}/{endDate}'
+---
+
+Returns the daily incoming email trends for the top 5 client domains within the specified date range. Only incoming emails are counted. The response provides a series array suitable for time-series visualization.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the trend range (YYYY-MM-DD) |
+| endDate   | string | Yes      | End date for the trend range (YYYY-MM-DD) |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved incoming email trends for top client domains
+
+```json
+{
+  "message": "",
+  "data": {
+    "labels": [
+      "2025-10-01",
+      "2025-10-02",
+      "2025-10-03",
+      "2025-10-04",
+      "2025-10-05",
+      "2025-10-06",
+      "2025-10-07"
+    ],
+    "series": [
+      {
+        "name": "gmail.com",
+        "data": [12, 15, 8, 22, 18, 25, 20]
+      },
+      {
+        "name": "yahoo.com",
+        "data": [8, 10, 6, 15, 12, 18, 14]
+      },
+      {
+        "name": "company.com",
+        "data": [5, 7, 4, 10, 8, 12, 9]
+      },
+      {
+        "name": "outlook.com",
+        "data": [6, 8, 5, 12, 10, 14, 11]
+      },
+      {
+        "name": "hotmail.com",
+        "data": [4, 6, 3, 8, 7, 10, 8]
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/clients/incoming-emails-trend/2025-10-01/2025-10-20' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Structure
+
+### Labels Array
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| labels| array  | List of dates in YYYY-MM-DD format      |
+
+### Series Array
+Each object represents a domain's daily email counts:
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| name  | string | Domain name                              |
+| data  | array  | Daily incoming email counts              |
+
+## Data Alignment
+- `series[i].data[j]` corresponds to `labels[j]` for the domain `series[i].name`
+- All data arrays have the same length as labels
+- Only incoming emails are counted (outgoing emails excluded)
+
+## Use Cases
+
+- **Client Behavior Analysis**: Track email patterns by domain
+- **Capacity Planning**: Predict volume from top domains
+- **Service Level Management**: Monitor domain-specific service levels
+- **Trend Identification**: Spot increasing/decreasing domain activity
+- **Visualization**: Create multi-line charts for domain trends
+
+## Analysis Examples
+
+### Domain Growth Analysis
+```javascript
+const analyzeGrowth = (data) => {
+  return data.series.map(domain => {
+    const firstDay = domain.data[0];
+    const lastDay = domain.data[domain.data.length - 1];
+    const growth = ((lastDay - firstDay) / firstDay) * 100;
+    const average = domain.data.reduce((a, b) => a + b, 0) / domain.data.length;
+    
+    return {
+      domain: domain.name,
+      firstDay,
+      lastDay,
+      growth: growth.toFixed(2),
+      average: average.toFixed(2),
+      trend: growth > 0 ? 'growing' : growth < 0 ? 'declining' : 'stable'
+    };
+  });
+};
+```
+
+### Peak Day Identification
+```javascript
+const findPeakDays = (data) => {
+  return data.series.map(domain => {
+    const maxVolume = Math.max(...domain.data);
+    const peakDayIndex = domain.data.indexOf(maxVolume);
+    const peakDay = data.labels[peakDayIndex];
+    
+    return {
+      domain: domain.name,
+      peakDay,
+      peakVolume: maxVolume,
+      peakDayIndex
+    };
+  });
+};
+```
+
+### Correlation Analysis
+```javascript
+const calculateCorrelation = (domain1, domain2) => {
+  const n = Math.min(domain1.data.length, domain2.data.length);
+  const sum1 = domain1.data.slice(0, n).reduce((a, b) => a + b, 0);
+  const sum2 = domain2.data.slice(0, n).reduce((a, b) => a + b, 0);
+  
+  // Simple correlation calculation
+  const correlation = n > 1 ? 
+    (n * sum1 * sum2 - sum1 * sum2) / 
+    Math.sqrt((n * sum1 * sum1 - sum1 * sum1) * (n * sum2 * sum2 - sum2 * sum2)) : 0;
+    
+  return correlation;
+};
+```
+
+## Visualization Examples
+
+### Multi-Line Chart
+```javascript
+const ctx = document.getElementById('domainTrends').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: response.data.labels,
+    datasets: response.data.series.map(domain => ({
+      label: domain.name,
+      data: domain.data,
+      borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+      backgroundColor: `hsla(${Math.random() * 360}, 70%, 50%, 0.1)`,
+      tension: 0.4
+    }))
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Incoming Emails'
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top'
+      }
+    }
+  }
+});
+```
+
+### Stacked Area Chart
+```javascript
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: response.data.labels,
+    datasets: response.data.series.map((domain, index) => ({
+      label: domain.name,
+      data: domain.data,
+      fill: index === 0 ? 'origin' : '-1', // Stacked fill
+      backgroundColor: `hsla(${index * 72}, 70%, 50%, 0.6)`,
+      borderColor: `hsl(${index * 72}, 70%, 50%)`
+    }))
+  }
+});
+```
+
+## Best Practices
+
+1. **Date Range**: Use reasonable ranges (recommended: max 90 days)
+2. **Focus**: Top 5 domains provide focused view without overwhelming data
+3. **Comparison**: Compare trends across domains for insights
+4. **Baseline**: Establish baseline patterns for anomaly detection
+5. **Regular Updates**: Update trends regularly for current insights
+
+## Performance Considerations
+
+- **Data Volume**: Multiple series increase data complexity
+- **Caching**: Results cached for 15 minutes by default
+- **Processing**: Larger date ranges take longer to process
+- **Memory**: Consider client-side memory for large datasets
+
+## Related Endpoints
+
+- Use `/email-meter/stats/clients/top-domains` for current top domains
+- Use `/email-meter/stats/emails-trend` for overall email trends
+- Use `/email-meter/stats/clients/response-times` for domain performance
+
+## Notes
+
+- Only incoming emails are included in counts
+- Top 5 domains are based on total volume in the date range
+- Zero-volume days are included for complete timeline
+- Data is calculated based on email receipt timestamps
+- Internal domains may be excluded based on configuration

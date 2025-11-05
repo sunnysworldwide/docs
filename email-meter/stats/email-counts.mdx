@@ -1,0 +1,165 @@
+---
+title: 'Email Count Statistics'
+openapi: 'GET /email-meter/stats/email-counts/{startDate}/{endDate}'
+---
+
+Returns email conversation and thread statistics for a specified date range. Counts total conversations, responded conversations, spam, and "no response required" messages. Tracks incoming and sent email counts, average thread size, and number of unique email addresses involved.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the report (ISO 8601 format). Defaults to a week from today if invalid |
+| endDate   | string | Yes      | End date for the report (ISO 8601 format). Defaults to today if invalid |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DDTHH:mm:ss.sssZ` (ISO 8601)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided or invalid
+
+## Response
+
+### 200 OK - Successfully retrieved email statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "conversations": {
+      "total": 120,
+      "responded": 95,
+      "spam": 10,
+      "noResponseRequired": 15
+    },
+    "threadsCounts": {
+      "incoming": 250,
+      "sent": 180,
+      "average": 3.2
+    },
+    "uniqueAddresses": 85
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "Invalid date range or malformed request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get statistics for specific date range
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/email-counts/2025-10-01T00:00:00.000Z/2025-10-20T23:59:59.000Z' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get statistics for last 7 days (default)
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/email-counts/invalid-date/invalid-date' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Conversations
+| Field                | Type    | Description                              |
+|----------------------|---------|------------------------------------------|
+| total                | integer | Total number of email conversations      |
+| responded            | integer | Conversations that received responses    |
+| spam                 | integer | Messages identified as spam              |
+| noResponseRequired   | integer | Messages that don't need responses       |
+
+### Thread Counts
+| Field     | Type    | Description                              |
+|-----------|---------|------------------------------------------|
+| incoming  | integer | Total incoming emails                    |
+| sent      | integer | Total sent emails                        |
+| average   | number  | Average thread size (emails per conversation) |
+
+### Unique Addresses
+| Field            | Type    | Description                              |
+|------------------|---------|------------------------------------------|
+| uniqueAddresses  | integer | Count of unique email addresses involved |
+
+## Use Cases
+
+- **Email Volume Analysis**: Track overall email activity
+- **Spam Monitoring**: Monitor spam email trends
+- **Response Rate**: Calculate email response rates
+- **Engagement Metrics**: Measure email thread engagement
+- **Contact Analysis**: Understand unique contact interactions
+
+## Metrics Calculations
+
+### Response Rate
+```
+Response Rate = (responded / total) * 100
+```
+
+### Spam Rate
+```
+Spam Rate = (spam / total) * 100
+```
+
+### Average Threads per Day
+```
+Avg Threads = total / number_of_days_in_range
+```
+
+## Performance Considerations
+
+- **Date Range**: Larger ranges may take longer to process
+- **Caching**: Results may be cached for recent queries
+- **Real-time Data**: Statistics reflect current email state
+- **Historical Analysis**: Supports analysis of historical trends
+
+## Best Practices
+
+1. **Date Range**: Use reasonable date ranges (recommended: max 90 days)
+2. **Time Zone**: All times are in UTC - convert for local display
+3. **Caching**: Cache results for dashboard performance
+4. **Error Handling**: Handle invalid dates gracefully
+5. **Rate Limiting**: Avoid excessive API calls for real-time updates
+
+## Related Endpoints
+
+- Use `/email-meter/stats/emails-trend` for daily breakdown
+- Use `/email-meter/stats/response-times` for timing analysis
+- Use `/email-meter/stats/clients/top-domains` for domain insights

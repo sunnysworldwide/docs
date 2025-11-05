@@ -1,0 +1,183 @@
+---
+title: 'Flagged Conversation Statistics'
+openapi: 'GET /email-meter/stats/flags/{startDate}/{endDate}'
+---
+
+Retrieves statistics related to flagged conversations, including the time to flag and the time to complete resolution after flagging.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date of the range (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date of the range (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved flag and completion statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "times": {
+      "flagged": {
+        "min": 5,
+        "max": 120,
+        "average": 25.8,
+        "median": 20.0
+      },
+      "complete": {
+        "fromFlagged": {
+          "min": 10,
+          "max": 300,
+          "average": 85.5,
+          "median": 72.0
+        },
+        "fromUnFlagged": {
+          "min": 15,
+          "max": 240,
+          "average": 65.2,
+          "median": 55.0
+        }
+      }
+    },
+    "counts": {
+      "totalFlagged": 35,
+      "completedFromFlagged": 28,
+      "completedFromUnFlagged": 14
+    }
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/flags/2025-10-01/2025-10-07' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Times - Flagged
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum time to flag conversation (minutes) |
+| max     | number  | Maximum time to flag conversation (minutes) |
+| average | number  | Average time to flag conversation (minutes) |
+| median  | number  | Median time to flag conversation (minutes) |
+
+### Times - Complete
+| Field           | Type    | Description                              |
+|-----------------|---------|------------------------------------------|
+| fromFlagged     | object  | Resolution time from flagged state (minutes) |
+| fromUnFlagged   | object  | Resolution time from normal state (minutes) |
+
+### Counts
+| Field                    | Type    | Description                              |
+|--------------------------|---------|------------------------------------------|
+| totalFlagged             | integer | Total conversations flagged              |
+| completedFromFlagged    | integer | Flagged conversations completed          |
+| completedFromUnFlagged  | integer | Unflagged conversations completed        |
+
+## Flag Analysis
+
+### Flagging Efficiency
+```javascript
+const flaggingEfficiency = {
+  flagRate: data.data.counts.totalFlagged / totalConversations,
+  completionRateFromFlagged: data.data.counts.completedFromFlagged / data.data.counts.totalFlagged,
+  averageTimeToFlag: data.data.times.flagged.average,
+  averageResolutionFromFlagged: data.data.times.complete.fromFlagged.average
+};
+```
+
+### Resolution Comparison
+```javascript
+const resolutionComparison = {
+  flaggedVsUnflagged: data.data.times.complete.fromFlagged.average - data.data.times.complete.fromUnFlagged.average,
+  flaggedSlower: data.data.times.complete.fromFlagged.average > data.data.times.complete.fromUnFlagged.average,
+  percentageDifference: ((data.data.times.complete.fromFlagged.average - data.data.times.complete.fromUnFlagged.average) / data.data.times.complete.fromUnFlagged.average) * 100
+};
+```
+
+## Use Cases
+
+- **Quality Control**: Monitor flagged conversation handling
+- **Process Improvement**: Identify issues requiring flagging
+- **Training Needs**: Target training based on flag patterns
+- **Escalation Management**: Track escalation effectiveness
+- **Performance Metrics**: Measure flag resolution efficiency
+
+## Flag Categories
+
+### Common Flag Reasons
+- **Urgent**: Requires immediate attention
+- **Escalation**: Needs higher-level support
+- **Complex**: Requires specialized knowledge
+- **Sensitive**: Contains sensitive information
+- **Compliance**: Requires compliance review
+
+### Performance Targets
+- **Time to Flag**: < 30 minutes for urgent issues
+- **Resolution from Flag**: < 2 hours for urgent flags
+- **Flag Completion Rate**: > 90% of flagged conversations resolved
+- **Flag Accuracy**: > 80% of flags are appropriate
+
+## Best Practices
+
+1. **Flagging Guidelines**: Establish clear flagging criteria
+2. **Training**: Train agents on when and how to flag
+3. **Monitoring**: Track flag patterns and resolution times
+4. **Feedback**: Provide feedback on flagging accuracy
+5. **Process Review**: Regularly review flagging processes
+
+## Related Endpoints
+
+- Use `/email-meter/stats/resolved-times` for overall resolution metrics
+- Use `/email-meter/stats/agents-detailed` for agent-specific flag data
+- Use `/email-meter/stats/response-times` for initial response analysis
+
+## Notes
+
+- Flag times are calculated from conversation start to flag action
+- Resolution times are calculated from flag to resolution
+- Only manual flags by agents are included
+- Automated flags are tracked separately
+- Flag reasons may be analyzed for pattern identification

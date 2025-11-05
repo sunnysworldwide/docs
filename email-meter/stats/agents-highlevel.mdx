@@ -1,0 +1,190 @@
+---
+title: 'Agent Performance Summary'
+openapi: 'GET /email-meter/stats/agents-highlevel/{startDate}/{endDate}'
+---
+
+Retrieves high-level metrics for agent performance and email assignment efficiency within the given date range. Includes statistics on time to assign agents and number of agents per conversation.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date of the range (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date of the range (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved agent high-level statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "agentAssignmentTimes": {
+      "first": {
+        "min": 1,
+        "max": 45,
+        "average": 8.5,
+        "median": 6.2
+      },
+      "overall": {
+        "min": 2,
+        "max": 120,
+        "average": 15.8,
+        "median": 12.5
+      }
+    },
+    "agentsCount": {
+      "min": 1,
+      "max": 5,
+      "average": 1.8,
+      "median": 1
+    }
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/agents-highlevel/2025-10-01/2025-10-07' \
+  -H 'Authorization: oBearerBearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### Agent Assignment Times
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| first   | object  | Time to assign first agent (minutes)     |
+| overall | object  | Time to complete all assignments (minutes) |
+
+#### Assignment Time Metrics
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum assignment time (minutes)        |
+| max     | number  | Maximum assignment time (minutes)        |
+| average | number  | Average assignment time (minutes)        |
+| median  | number  | Median assignment time (minutes)         |
+
+### Agents Count
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum agents per conversation          |
+| max     | number  | Maximum agents per conversation          |
+| average | number  | Average agents per conversation          |
+| median  | number  | Median agents per conversation           |
+
+## Performance Metrics
+
+### Assignment Efficiency
+- **Excellent**: < 5 minutes to first assignment
+- **Good**: 5-10 minutes to first assignment
+- **Needs Improvement**: 10-20 minutes
+- **Poor**: > 20 minutes
+
+### Agent Utilization
+- **Optimal**: 1-2 agents per conversation
+- **Collaborative**: 2-3 agents per conversation
+- **Overstaffed**: > 3 agents per conversation
+- **Understaffed**: Consistent 1 agent with long assignments
+
+## Use Cases
+
+- **Team Performance**: Monitor agent assignment efficiency
+- **Resource Planning**: Optimize agent allocation
+- **Process Improvement**: Identify bottlenecks in assignment
+- **Quality Assurance**: Ensure timely agent responses
+- **Capacity Analysis**: Understand agent workload distribution
+
+## Analysis Examples
+
+### Assignment Performance
+```javascript
+const assignmentPerformance = {
+  excellent: data.data.agentAssignmentTimes.first.average < 5,
+  good: data.data.agentAssignmentTimes.first.average >= 5 && 
+         data.data.agentAssignmentTimes.first.average < 10,
+  needsImprovement: data.data.agentAssignmentTimes.first.average >= 10
+};
+```
+
+### Workload Distribution
+```javascript
+const workloadDistribution = {
+  optimal: data.data.agentsCount.average <= 2,
+  collaborative: data.data.agentsCount.average > 2 && 
+                data.data.agentsCount.average <= 3,
+  overstaffed: data.data.agentsCount.average > 3
+};
+```
+
+## Best Practices
+
+1. **Monitoring**: Track assignment times regularly
+2. **Alerts**: Set up alerts for slow assignments
+3. **Balancing**: Distribute workload evenly across agents
+4. **Training**: Use data for agent performance training
+5. **Optimization**: Continuously improve assignment processes
+
+## Performance Targets
+
+### Assignment Time Targets
+- **First Assignment**: < 10 minutes (80% of conversations)
+- **Complete Assignment**: < 20 minutes (90% of conversations)
+- **Maximum Time**: < 60 minutes (99% of conversations)
+
+### Agent Count Targets
+- **Average**: 1.5-2.5 agents per conversation
+- **Maximum**: < 5 agents per conversation
+- **Consistency**: Low variance in agent counts
+
+## Related Endpoints
+
+- Use `/email-meter/stats/agents-detailed` for per-agent statistics
+- Use `/email-meter/stats/response-times` for overall response metrics
+- Use `/email-meter/stats/resolved-times` for resolution analysis
+
+## Notes
+
+- Assignment times are calculated from email receipt to agent assignment
+- Times exclude automated assignments and routing
+- Only human agent assignments are included
+- Business hours are considered by default
+- Weekends and holidays may affect average times

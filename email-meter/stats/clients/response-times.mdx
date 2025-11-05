@@ -1,0 +1,291 @@
+---
+title: 'Client Domain Response Times'
+openapi: 'GET /email-meter/stats/clients/longest-response-times/{startDate}/{endDate}'
+---
+
+Returns the top 10 client domains with the longest median response times over the specified date range. Calculates response times from all email conversations and includes both overall stats and per-domain median response times.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the analysis (YYYY-MM-DD) |
+| endDate   | string | Yes      | End date for the analysis (YYYY-MM-DD)   |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved response time statistics for client domains
+
+```json
+{
+  "message": "",
+  "data": {
+    "responseTimes": {
+      "overall": {
+        "min": 5,
+        "max": 185,
+        "average": 54.3,
+        "median": 48.5
+      },
+      "domains": [
+        {
+          "domain": "example.com",
+          "median": 122.5
+        },
+        {
+          "domain": "business.co",
+          "median": 98.7
+        },
+        {
+          "domain": "partner.io",
+          "median": 77.3
+        },
+        {
+          "domain": "client1.com",
+          "median": 65.8
+        },
+        {
+          "domain": "service.net",
+          "median": 58.2
+        },
+        {
+          "domain": "company.org",
+          "median": 52.1
+        },
+        {
+          "domain": "enterprise.com",
+          "median": 48.9
+        },
+        {
+          "domain": "startup.io",
+          "median": 45.6
+        },
+        {
+          "domain": "firm.co",
+          "median": 42.3
+        },
+        {
+          "domain": "agency.com",
+          "median": 38.7
+        }
+      ]
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "Invalid date range or bad request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/clients/longest-response-times/2025-10-01/2025-10-20' \
+  -H 'Authorization: oBearerbearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### Overall Statistics
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum response time (minutes)          |
+| max     | number  | Maximum response time (minutes)          |
+| average | number  | Average response time (minutes)          |
+| median  | number  | Median response time (minutes)           |
+
+### Domains Array
+| Field | Type    | Description                              |
+|-------|---------|------------------------------------------|
+| domain| string  | Client domain name                       |
+| median| number  | Median response time for domain (minutes) |
+
+## Performance Analysis
+
+### Response Time Categories
+```javascript
+const categorizeResponseTime = (median) => {
+  if (median < 15) return 'Excellent';
+  if (median < 30) return 'Good';
+  if (median < 60) return 'Acceptable';
+  if (median < 120) return 'Needs Improvement';
+  return 'Poor';
+};
+
+const domainPerformance = data.data.responseTimes.domains.map(domain => ({
+  ...domain,
+  category: categorizeResponseTime(domain.median)
+}));
+```
+
+### Performance Comparison
+```javascript
+const compareWithOverall = (domains, overall) => {
+  return domains.map(domain => ({
+    ...domain,
+    difference: domain.median - overall.median,
+    performance: domain.median > overall.median ? 'Below Average' : 'Above Average',
+    percentageDiff: ((domain.median - overall.median) / overall.median * 100).toFixed(2)
+  }));
+};
+```
+
+### Trend Analysis
+```javascript
+const analyzeTrends = (currentData, previousData) => {
+  return currentData.domains.map(domain => {
+    const previousDomain = previousData.domains.find(d => d.domain === domain.domain);
+    const previousMedian = previousDomain ? previousDomain.median : 0;
+    const change = domain.median - previousMedian;
+    const trend = change > 0 ? 'slowing' : change < 0 ? 'improving' : 'stable';
+    
+    return {
+      ...domain,
+      previousMedian,
+      change,
+      trend
+    };
+  });
+};
+```
+
+## Use Cases
+
+- **Service Quality**: Identify domains experiencing slow responses
+- **Process Improvement**: Target improvements for specific client types
+- **SLA Management**: Monitor service level compliance by domain
+- **Resource Allocation**: Prioritize resources for problematic domains
+- **Client Management**: Address performance issues with specific clients
+
+## Visualization Examples
+
+### Horizontal Bar Chart
+```javascript
+const ctx = document.getElementById('responseTimes').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: response.data.responseTimes.domains.map(d => d.domain),
+    datasets: [{
+      label: 'Median Response Time (minutes)',
+      data: response.data.responseTimes.domains.map(d => d.median),
+      backgroundColor: response.data.responseTimes.domains.map(d => {
+        if (d.median < 30) return 'rgba(75, 192, 192, 0.8)'; // Good
+        if (d.median < 60) return 'rgba(255, 206, 86, 0.8)'; // Warning
+        return 'rgba(255, 99, 132, 0.8)'; // Poor
+      })
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Response Time (minutes)'
+        }
+      }
+    }
+  }
+});
+```
+
+### Comparison Chart
+```javascript
+new Chart(ctx, {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Domain Response Times',
+      data: response.data.responseTimes.domains.map((d, i) => ({
+        x: d.median,
+        y: i,
+        domain: d.domain
+      })),
+      backgroundColor: 'rgba(54, 162, 235, 0.8)'
+    }, {
+      label: 'Overall Median',
+      data: [{x: response.data.responseTimes.overall.median, y: -1}],
+      backgroundColor: 'rgba(255, 99, 132, 0.8)',
+      pointRadius: 8
+    }]
+  }
+});
+```
+
+## Best Practices
+
+1. **Regular Monitoring**: Track response times weekly
+2. **Threshold Alerts**: Set up alerts for domains exceeding thresholds
+3. **Root Cause Analysis**: Investigate causes of slow responses
+4. **Improvement Tracking**: Monitor improvements over time
+5. **Client Communication**: Discuss performance issues with affected clients
+
+## Performance Targets
+
+### Response Time Targets
+- **Excellent**: < 15 minutes median response time
+- **Good**: 15-30 minutes median response time
+- **Acceptable**: 30-60 minutes median response time
+- **Needs Improvement**: 60-120 minutes median response time
+- **Critical**: > 120 minutes median response time
+
+## Related Endpoints
+
+- Use `/email-meter/stats/response-times` for overall response metrics
+- Use `/email-meter/stats/clients/top-domains` for domain volume analysis
+- Use `/email-meter/stats/agents-detailed` for agent-specific response times
+
+## Notes
+
+- Response times are calculated in minutes
+- Median is used instead of average to reduce impact of outliers
+- Only domains with sufficient conversation volume are included
+- Times are based on business hours by default
+- Automated responses are excluded from calculations

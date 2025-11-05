@@ -1,0 +1,173 @@
+---
+title: 'Email Response Time Statistics'
+openapi: 'GET /email-meter/stats/response-times/{startDate}/{endDate}'
+---
+
+Returns detailed response time metrics for emails within the specified date range. Includes both first response and overall response time statistics. Also reports SLA (Service Level Agreement - currently 15 mins) compliance breakdown.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the report (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date for the report (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DDTHH:mm:ss.sssZ` (ISO 8601)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved response time statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "firstResponse": {
+      "min": 2,
+      "max": 180,
+      "average": 25.5,
+      "median": 18.2,
+      "withinSLA": 85,
+      "outsideSLA": 15
+    },
+    "overallResponse": {
+      "min": 5,
+      "max": 240,
+      "average": 45.8,
+      "median": 38.5,
+      "withinSLA": 72,
+      "outsideSLA": 28
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "Invalid date range or malformed request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/response-times/2025-10-01T00:00:00.000Z/2025-10-20T23:59:59.000Z' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### First Response Metrics
+| Field        | Type    | Description                              |
+|--------------|---------|------------------------------------------|
+| min          | number  | Minimum first response time (minutes)    |
+| max          | number  | Maximum first response time (minutes)    |
+| average      | number  | Average first response time (minutes)    |
+| median       | number  | Median first response time (minutes)     |
+| withinSLA    | integer | Count of responses within 15 minutes     |
+| outsideSLA   | integer | Count of responses after 15 minutes      |
+
+### Overall Response Metrics
+| Field        | Type    | Description                              |
+|--------------|---------|------------------------------------------|
+| min          | number  | Minimum overall response time (minutes)  |
+| max          | number  | Maximum overall response time (minutes)  |
+| average      | number  | Average overall response time (minutes)  |
+| median       | number  | Median overall response time (minutes)   |
+| withinSLA    | integer | Count of final responses within 15 minutes |
+| outsideSLA   | integer | Count of final responses after 15 minutes |
+
+## SLA Compliance
+
+### Current SLA: 15 Minutes
+- **Within SLA**: Response sent within 15 minutes
+- **Outside SLA**: Response sent after 15 minutes
+- **First Response**: Time to first reply in conversation
+- **Overall Response**: Time to final resolution
+
+### SLA Calculations
+```
+SLA Compliance Rate = (withinSLA / (withinSLA + outsideSLA)) * 100
+```
+
+## Use Cases
+
+- **Service Quality**: Monitor email response performance
+- **SLA Reporting**: Track compliance with service level agreements
+- **Team Performance**: Evaluate agent response times
+- **Process Improvement**: Identify areas needing faster responses
+- **Customer Satisfaction**: Correlate response times with satisfaction
+
+## Performance Metrics
+
+### Response Time Categories
+- **Excellent**: < 5 minutes
+- **Good**: 5-15 minutes (within SLA)
+- **Needs Improvement**: 15-60 minutes
+- **Poor**: > 60 minutes
+
+### Benchmarking
+- Compare against industry standards
+- Track improvement over time
+- Identify peak performance periods
+- Monitor team performance trends
+
+## Best Practices
+
+1. **Monitoring**: Regularly check SLA compliance
+2. **Alerts**: Set up alerts for SLA breaches
+3. **Analysis**: Analyze patterns in delayed responses
+4. **Training**: Use data for agent training
+5. **Optimization**: Identify bottlenecks in response process
+
+## Related Endpoints
+
+- Use `/email-meter/stats/agents-detailed` for agent-specific response times
+- Use `/email-meter/stats/hourly-trends` for time-of-day analysis
+- Use `/email-meter/stats/clients/response-times` for client-specific analysis
+
+## Notes
+
+- All response times are calculated in minutes
+- Times are based on business hours by default
+- Weekends and holidays may be excluded based on configuration
+- Automated responses are excluded from calculations
+- Response times include only human-to-human interactions

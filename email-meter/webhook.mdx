@@ -1,0 +1,183 @@
+---
+title: 'Microsoft Graph Webhook'
+openapi: 'POST /email-meter/reservation-hook'
+---
+
+Webhook endpoint used by Microsoft Graph for email notification events. This endpoint does not require authentication since it's called by Microsoft servers.
+
+## Request
+
+### Query Parameters
+
+| Parameter         | Type   | Required | Description                                      |
+|-------------------|--------|----------|--------------------------------------------------|
+| validationToken  | string | No       | Validation token sent by Microsoft Graph during webhook registration |
+
+### Request Body (for email notifications)
+
+```json
+{
+  "value": [
+    {
+      "subscriptionId": "a12b34cd-56e7-890f-12gh-3456ijkl7890",
+      "changeType": "created",
+      "resource": "me/messages/AAMkADNkZDIxY2E1L...",
+      "resourceData": {
+        "id": "AAMkADNkZDIxY2E1LTQzNDUtNGUwYS04ZTFlLTY1NjVhYjMxZTc2MwBGAAAAA..."
+      }
+    }
+  ]
+}
+```
+
+### Request Body Schema
+
+| Field         | Type   | Required | Description                              |
+|---------------|--------|----------|------------------------------------------|
+| value         | array  | No       | Array of Microsoft Graph notification objects |
+| subscriptionId| string | No       | Unique subscription identifier          |
+| changeType    | string | No       | Type of change (created, updated, deleted) |
+| resource      | string | No       | Resource identifier                      |
+| resourceData  | object | No       | Data about the changed resource          |
+
+## Response
+
+### 200 OK - Webhook validation (returns validation token)
+
+```
+ValidationTokenExample123456
+```
+
+### 200 OK - Email notification processed
+
+```json
+{
+  "status": "processed",
+  "message": "Email notification received and queued for processing"
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Invalid or malformed request"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Webhook Validation (during setup)
+```bash
+# Microsoft Graph calls this with validationToken
+curl -X POST 'http://localhost:2000/email-meter/reservation-hook?validationToken=ValidationTokenExample123456'
+```
+
+### Email Notification (real-time)
+```bash
+# Microsoft Graph calls this when new email arrives
+curl -X POST 'http://localhost:2000/email-meter/reservation-hook' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "value": [
+      {
+        "subscriptionId": "a12b34cd-56e7-890f-12gh-3456ijkl7890",
+        "changeType": "created",
+        "resource": "me/messages/AAMkADNkZDIxY2E1L...",
+        "resourceData": {
+          "id": "AAMkADNkZDIxY2E1LTQzNDUtNGUwYS04ZTFlLTY1NjVhYjMxZTc2MwBGAAAAA..."
+        }
+      }
+    ]
+  }'
+```
+
+## Notes
+
+- **No Authentication Required**: This endpoint is called by Microsoft servers
+- **Two Modes**: Validation during setup, notifications during operation
+- **Validation Token**: Must be echoed back exactly as received during setup
+- **Real-time Processing**: Email notifications are processed immediately
+- **Queue System**: Notifications are queued for asynchronous processing
+
+## Webhook Lifecycle
+
+### 1. Setup Phase
+- Microsoft Graph sends validation token
+- Endpoint returns the token unchanged
+- Subscription becomes active
+
+### 2. Operation Phase
+- Microsoft Graph sends email event notifications
+- Endpoint processes and acknowledges notifications
+- Emails are analyzed and statistics updated
+
+## Event Types
+
+| Change Type | Description                              | Action Taken                     |
+|-------------|------------------------------------------|----------------------------------|
+| created     | New email received                       | Analyze email, update stats      |
+| updated     | Email modified                           | Re-analyze if needed             |
+| deleted     | Email deleted                            | Update statistics accordingly    |
+
+## Processing Flow
+
+1. **Receive Notification**: Microsoft Graph sends webhook
+2. **Validate Request**: Verify source and format
+3. **Queue for Processing**: Add to analysis queue
+4. **Email Analysis**: Extract metadata and content
+5. **Update Statistics**: Refresh all relevant metrics
+6. **Trigger Notifications**: Send alerts if configured
+
+## Security Considerations
+
+- **Source Verification**: Verify requests come from Microsoft Graph
+- **Rate Limiting**: Handle high volume of notifications
+- **Data Privacy**: Process email content securely
+- **Error Handling**: Graceful degradation on processing failures
+
+## Troubleshooting
+
+### Common Issues
+
+- **Validation Fails**: Ensure exact token is returned
+- **Missing Notifications**: Check subscription status
+- **Processing Delays**: Monitor queue health
+- **Duplicate Events**: Implement deduplication logic
+
+### Monitoring
+
+- Track webhook response times
+- Monitor notification processing queue
+- Alert on failed validation attempts
+- Log all webhook events for auditing
+
+## Configuration
+
+The webhook endpoint URL must be:
+- **Publicly accessible**: Microsoft servers must reach it
+- **HTTPS enabled**: Required for security
+- **Responsive**: Must respond within timeout limits
+- **Reliable**: Handle Microsoft's retry logic
+
+## Best Practices
+
+1. **Fast Response**: Respond quickly to webhook calls
+2. **Async Processing**: Use background jobs for email analysis
+3. **Error Recovery**: Implement retry logic for failures
+4. **Logging**: Log all webhook events for debugging
+5. **Monitoring**: Set up alerts for webhook health

@@ -97,6 +97,50 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Email Meter",
+        "groups": [
+          {
+            "group": "Setup & Integration",
+            "pages": [
+              "email-meter/signin",
+              "email-meter/webhook"
+            ]
+          },
+          {
+            "group": "Email Statistics",
+            "pages": [
+              "email-meter/stats/email-counts",
+              "email-meter/stats/response-times",
+              "email-meter/stats/emails-trend"
+            ]
+          },
+          {
+            "group": "Agent Analytics",
+            "pages": [
+              "email-meter/stats/agents-highlevel",
+              "email-meter/stats/agents-detailed",
+              "email-meter/stats/resolved-times"
+            ]
+          },
+          {
+            "group": "Performance Metrics",
+            "pages": [
+              "email-meter/stats/flags",
+              "email-meter/stats/hourly-trends"
+            ]
+          },
+          {
+            "group": "Client Analytics",
+            "pages": [
+              "email-meter/stats/clients/top-domains",
+              "email-meter/stats/clients/lowest-resolved",
+              "email-meter/stats/clients/incoming-trends",
+              "email-meter/stats/clients/response-times"
+            ]
+          }
+        ]
       }
     ]
   },

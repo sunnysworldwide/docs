@@ -1,0 +1,178 @@
+---
+title: 'Conversation Resolution Times'
+openapi: 'GET /email-meter/stats/resolved-times/{startDate}/{endDate}'
+---
+
+Retrieves metrics about how long conversations take to resolve. Includes resolution times from the first received email and from the last assigned agent, both with and without delays.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date of the range (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date of the range (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved resolution time statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "fromFirstEmail": {
+      "min": 15,
+      "max": 480,
+      "average": 85.5,
+      "median": 72.0
+    },
+    "fromLastAssignedAgent": {
+      "withDelays": {
+        "min": 5,
+        "max": 240,
+        "average": 45.8,
+        "median": 38.5
+      },
+      "withoutDelays": {
+        "min": 2,
+        "max": 120,
+        "average": 25.4,
+        "median": 20.0
+      }
+    }
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/resolved-times/2025-10-01/2025-10-20' \
+  -H 'Authorization: oBearerBearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### From First Email
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum time from first email to resolution (minutes) |
+| max     | number  | Maximum time from first email to resolution (minutes) |
+| average | number  | Average time from first email to resolution (minutes) |
+| median  | number  | Median time from first email to resolution (minutes) |
+
+### From Last Assigned Agent
+| Field           | Type    | Description                              |
+|-----------------|---------|------------------------------------------|
+| withDelays      | object  | Resolution times including delays (minutes) |
+| withoutDelays   | object  | Resolution times excluding delays (minutes) |
+
+#### Resolution Time Metrics
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| min     | number  | Minimum resolution time (minutes)        |
+| max     | number  | Maximum resolution time (minutes)        |
+| average | number  | Average resolution time (minutes)        |
+| median  | number  | Median resolution time (minutes)         |
+
+## Resolution Categories
+
+### Time Categories
+- **Excellent**: < 30 minutes
+- **Good**: 30-60 minutes
+- **Acceptable**: 60-120 minutes
+- **Needs Improvement**: 120-240 minutes
+- **Critical**: > 240 minutes
+
+### Delay Impact
+```javascript
+const delayImpact = {
+  withDelays: data.data.fromLastAssignedAgent.withDelays.average,
+  withoutDelays: data.data.fromLastAssignedAgent.withoutDelays.average,
+  impactPercentage: ((withDelays - withoutDelays) / withoutDelays) * 100
+};
+```
+
+## Use Cases
+
+- **Service Quality**: Monitor conversation resolution efficiency
+- **Process Improvement**: Identify bottlenecks in resolution
+- **Customer Experience**: Track time to issue resolution
+- **Team Performance**: Evaluate agent resolution capabilities
+- **SLA Management**: Track resolution service level agreements
+
+## Performance Metrics
+
+### Resolution Efficiency
+```javascript
+const efficiencyMetrics = {
+  sameDayResolution: percentage < 1440, // Less than 24 hours
+  quickResolution: percentage < 60,      // Less than 1 hour
+  standardResolution: percentage < 480,  // Less than 8 hours
+  extendedResolution: percentage >= 480  // More than 8 hours
+};
+```
+
+### Delay Analysis
+- **Processing Delays**: Time spent in queues and routing
+- **Agent Delays**: Time waiting for agent availability
+- **Customer Delays**: Time waiting for customer responses
+- **System Delays**: Technical processing delays
+
+## Best Practices
+
+1. **Monitoring**: Track resolution times continuously
+2. **Alerts**: Set up alerts for extended resolutions
+3. **Analysis**: Analyze patterns in delayed resolutions
+4. **Optimization**: Streamline resolution processes
+5. **Training**: Focus on resolution time improvement
+
+## Related Endpoints
+
+- Use `/email-meter/stats/response-times` for initial response metrics
+- Use `/email-meter/stats/agents-detailed` for agent-specific resolution data
+- Use `/email-meter/stats/flags` for flagged conversation metrics
+
+## Notes
+
+- Resolution times are calculated in minutes
+- Times are based on business hours by default
+- Only resolved conversations are included in calculations
+- Delays include queue time, routing delays, and customer response waits
+- Automated resolutions are excluded from manual resolution metrics

@@ -1,0 +1,178 @@
+---
+title: 'Detailed Agent Statistics'
+openapi: 'GET /email-meter/stats/agents/{startDate}/{endDate}'
+---
+
+Retrieves detailed performance metrics for individual agents within the specified date range. Includes per-agent statistics on email handling, response times, and conversation management.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date of the range (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date of the range (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved detailed agent statistics
+
+```json
+{
+  "message": "",
+  "data": {
+    "agents": [
+      {
+        "agentId": "64b7f1a2e4b0a5d3f9c12345",
+        "agentName": "John Doe",
+        "agentEmail": "john.doe@company.com",
+        "metrics": {
+          "conversationsHandled": 45,
+          "emailsSent": 78,
+          "emailsReceived": 92,
+          "averageResponseTime": 12.5,
+          "medianResponseTime": 8.2,
+          "withinSLA": 38,
+          "outsideSLA": 7,
+          "resolutionRate": 0.84,
+          "averageResolutionTime": 45.8
+        }
+      },
+      {
+        "agentId": "64b7f2b3e4b0a5d3f9c54321",
+        "agentName": "Jane Smith",
+        "agentEmail": "jane.smith@company.com",
+        "metrics": {
+          "conversationsHandled": 52,
+          "emailsSent": 95,
+          "emailsReceived": 108,
+          "averageResponseTime": 8.7,
+          "medianResponseTime": 6.5,
+          "withinSLA": 47,
+          "outsideSLA": 5,
+          "resolutionRate": 0.90,
+          "averageResolutionTime": 32.4
+        }
+      }
+    ],
+    "summary": {
+      "totalAgents": 8,
+      "activeAgents": 6,
+      "averageConversationsPerAgent": 32.5,
+      "overallSLACompliance": 0.85
+    }
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/agents/2025-10-01/2025-10-07' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Fields Explained
+
+### Agent Metrics
+| Field                    | Type    | Description                              |
+|--------------------------|---------|------------------------------------------|
+| conversationsHandled     | integer | Total conversations assigned to agent   |
+| emailsSent               | integer | Total emails sent by agent              |
+| emailsReceived           | integer | Total emails received by agent          |
+| averageResponseTime      | number  | Average response time (minutes)         |
+| medianResponseTime       | number  | Median response time (minutes)          |
+| withinSLA                | integer | Responses within 15 minutes             |
+| outsideSLA               | integer | Responses after 15 minutes              |
+| resolutionRate           | number  | Rate of resolved conversations (0-1)    |
+| averageResolutionTime    | number  | Average time to resolve (minutes)       |
+
+### Summary Metrics
+| Field                        | Type    | Description                              |
+|------------------------------|---------|------------------------------------------|
+| totalAgents                  | integer | Total agents in system                   |
+| activeAgents                 | integer | Agents with activity in date range       |
+| averageConversationsPerAgent | number  | Average conversations per active agent  |
+| overallSLACompliance         | number  | Overall SLA compliance rate (0-1)       |
+
+## Performance Analysis
+
+### Agent Performance Tiers
+- **Top Performers**: > 90% SLA compliance, < 10 min avg response
+- **Solid Performers**: 80-90% SLA compliance, 10-15 min avg response
+- **Needs Coaching**: < 80% SLA compliance, > 15 min avg response
+- **Underperforming**: < 70% SLA compliance, > 20 min avg response
+
+### Workload Balance
+```javascript
+const workloadBalance = {
+  balanced: Math.max(...agents.map(a => a.metrics.conversationsHandled)) / 
+             Math.min(...agents.map(a => a.metrics.conversationsHandled)) < 2,
+  overloaded: agents.some(a => a.metrics.conversationsHandled > average * 1.5),
+  underutilized: agents.some(a => a.metrics.conversationsHandled < average * 0.5)
+};
+```
+
+## Use Cases
+
+- **Performance Reviews**: Individual agent performance evaluation
+- **Team Management**: Identify top and underperforming agents
+- **Training Needs**: Target training based on performance gaps
+- **Workload Distribution**: Balance conversation assignments
+- **Incentive Programs**: Data-driven performance rewards
+
+## Best Practices
+
+1. **Regular Reviews**: Weekly or monthly performance reviews
+2. **Trend Analysis**: Track performance trends over time
+3. **Peer Comparison**: Compare agents with similar workloads
+4. **Coaching**: Use data for constructive feedback
+5. **Recognition**: Acknowledge top performers
+
+## Related Endpoints
+
+- Use `/email-meter/stats/agents-highlevel` for team-level metrics
+- Use `/email-meter/stats/response-times` for overall response analysis
+- Use `/email-meter/stats/resolved-times` for resolution metrics
+
+## Notes
+
+- Only includes agents with activity in the specified date range
+- Response times exclude automated responses
+- Resolution rate considers conversations marked as resolved
+- Metrics are calculated based on business hours by default
+- Data is updated in real-time as new emails are processed

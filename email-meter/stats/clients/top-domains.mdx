@@ -1,0 +1,274 @@
+---
+title: 'Top Client Domains'
+openapi: 'GET /email-meter/stats/clients/top-10/:startDate/:endDate}'
+---
+
+Returns the top 10 client domains ranked by the number of email conversations within the given date range. The endpoint counts how many new emails came from each domain. Results are sorted by descending frequency (highest first).
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date for the range (YYYY-MM-DD)    |
+| endDate   | string | Yes      | End date for the range (YYYY-MM-DD)      |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved top client domains
+
+```json
+{
+  "message": "",
+  "data": {
+    "topClients": [
+      {
+        "domain": "gmail.com",
+        "count": 124
+      },
+      {
+        "domain": "yahoo.com",
+        "count": 87
+      },
+      {
+        "domain": "company.com",
+        "count": 72
+      },
+      {
+        "domain": "outlook.com",
+        "count": 65
+      },
+      {
+        "domain": "hotmail.com",
+        "count": 54
+      },
+      {
+        "domain": "icloud.com",
+        "count": 43
+      },
+      {
+        "domain": "aol.com",
+        "count": 32
+      },
+      {
+        "domain": "mail.com",
+        "count": 28
+      },
+      {
+        "domain": "protonmail.com",
+        "count": 21
+      },
+      {
+        "domain": "zoho.com",
+        "count": 18
+      }
+    ]
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "INVALID_DATE_RANGE",
+    "message": "Invalid date range or bad request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/clients/top-10/2025-10-01/2025-10-20' \
+  -H 'Authorization: oBearerbearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### Top Clients Array
+| Field | Type    | Description                              |
+|-------|---------|------------------------------------------|
+| domain| string  | The client's email domain name           |
+| count | integer | Number of conversations with this domain |
+
+## Analysis Examples
+
+### Market Share Analysis
+```javascript
+const totalConversations = data.data.topClients.reduce((sum, client) => sum + client.count, 0);
+const marketShare = data.data.topClients.map(client => ({
+  domain: client.domain,
+  count: client.count,
+  percentage: ((client.count / totalConversations) * 100).toFixed(2)
+}));
+```
+
+### Domain Type Classification
+```javascript
+const classifyDomain = (domain) => {
+  if (domain.includes('gmail') || domain.includes('google')) return 'Personal';
+  if (domain.includes('yahoo') || domain.includes('aol')) return 'Personal';
+  if (domain.includes('outlook') || domain.includes('hotmail') || domain.includes('live')) return 'Microsoft';
+  if (domain.includes('icloud') || domain.includes('me.com')) return 'Apple';
+  if (domain.includes('protonmail') || domain.includes('tutanota')) return 'Secure';
+  if (domain.match(/^[a-zA-Z0--]+\.[a-zA-Z0-]{2,}$/)) return 'Business';
+  return 'Other';
+};
+
+const domainTypes = data.data.topClients.map(client => ({
+  ...client,
+  type: classifyDomain(client.domain)
+}));
+```
+
+### Trend Analysis
+```javascript
+const analyzeTrends = (currentData, previousData) => {
+  return currentData.topClients.map(client => {
+    const previousClient = previousData.topClients.find(c => c.domain === client.domain);
+    const previousCount = previousClient ? previousClient.count : 0;
+    const change = client.count - previousCount;
+    const changePercentage = previousCount > 0 ? ((change / previousCount) * 100) : 0;
+    
+    return {
+      ...client,
+      previousCount,
+      change,
+      changePercentage: changePercentage.toFixed(2),
+      trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
+    };
+  });
+};
+```
+
+## Use Cases
+
+- **Client Segmentation**: Understand client base composition
+- **Market Analysis**: Identify dominant email providers
+- **Resource Planning**: Allocate resources based on client volume
+- **Partnership Opportunities**: Identify potential email provider partnerships
+- **Security Analysis**: Monitor unusual domain patterns
+
+## Visualization Examples
+
+### Pie Chart
+```javascript
+// Example using Chart.js
+const ctx = document.getElementById('topDomains').getContext('2d');
+new Chart(ctx, {
+  type: 'pie',
+  data: {
+    labels: response.data.topClients.map(client => client.domain),
+    datasets: [{
+      data: response.data.topClients.map(client => client.count),
+      backgroundColor: [
+        '#FF66', '#36A2EB', '#FFCE0', '#FFoF', '#C',
+        '#o', '#o', '#o', '#o', '#o'
+      ]
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
+```
+
+### Bar Chart
+```javascript
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: response.data.topClients.map(client => client.domain),
+    datasets: [{
+      label: 'Email Conversations',
+      data: response.data.topClients.map(client => client.count),
+      backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Number of Conversations'
+        }
+      }
+    }
+  }
+});
+```
+
+## Best Practices
+
+1. **Regular Monitoring**: Track top domains weekly or monthly
+2. **Trend Analysis**: Compare with previous periods
+3. **Domain Classification**: Group domains by type for analysis
+4. **Anomaly Detection**: Monitor for unusual domain patterns
+5. **Integration**: Combine with other client metrics
+
+## Performance Considerations
+
+- **Caching**: Results cached for 15 minutes by default
+- **Date Range**: Larger ranges may take longer to process
+- **Data Volume**: Top 10 provides focused view while managing performance
+
+## Related Endpoints
+
+- Use `/email-meter/stats/clients/incoming-trends` for domain-specific trends
+- Use `/email-meter/stats/clients/response-times` for domain performance analysis
+- Use `/email-meter/stats/clients/lowest-resolved` for problem domain identification
+
+## Notes
+
+- Only domains with at least one conversation are included
+- Counts are based on new email conversations started
+- Internal domains may be excluded based on configuration
+- Data is updated in real-time as new emails are processed
+- Subdomains are counted separately from parent domains

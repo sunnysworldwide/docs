@@ -1,0 +1,205 @@
+---
+title: 'Daily Email Activity Trend'
+openapi: 'GET /email-meter/stats/emails-trend/{startDate}/{endDate}'
+---
+
+Retrieves the trend of incoming and sent emails across the specified date range. Each label in `labels` corresponds to a date in the range, and `series` contains counts of sent and received emails for each day.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| startDate | string | Yes      | Start date of the range (ISO 8601). Defaults to 7 days before today |
+| endDate   | string | Yes      | End date of the range (ISO 8601). Defaults to today |
+
+#### Parameter Format
+- **Format**: `YYYY-MM-DD` (ISO 8601 date)
+- **Timezone**: UTC
+- **Default**: Last 7 days if not provided
+
+## Response
+
+### 200 OK - Successfully retrieved email activity trend
+
+```json
+{
+  "message": "",
+  "data": {
+    "series": [
+      {
+        "name": "Incoming",
+        "data": [12, 18, 9, 25, 14, 22, 19]
+      },
+      {
+        "name": "Sent",
+        "data": [8, 15, 7, 20, 12, 18, 16]
+      }
+    ],
+    "labels": [
+      "2025-10-01",
+      "2025-10-02",
+      "2025-10-03",
+      "2025-10-04",
+      "2025-10-05",
+      "2025-10-06",
+      "2025-10-07"
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/emails-trend/2025-10-01/2025-10-07' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Data Structure
+
+### Series Array
+Each object in the series represents:
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| name  | string | Series name ("Incoming" or "Sent")       |
+| data  | array  | Email counts corresponding to each date |
+
+### Labels Array
+| Field | Type   | Description                              |
+|-------|--------|------------------------------------------|
+| labels| array  | Dates in YYYY-MM-DD format              |
+
+### Data Alignment
+- `series[0].data[i]` corresponds to `labels[i]` for Incoming emails
+- `series[1].data[i]` corresponds to `labels[i]` for Sent emails
+- All arrays have the same length
+
+## Use Cases
+
+- **Trend Analysis**: Visualize email volume over time
+- **Capacity Planning**: Identify peak email periods
+- **Performance Monitoring**: Track daily email patterns
+- **Dashboard Visualization**: Create line charts and graphs
+- **Seasonal Patterns**: Identify weekly/monthly trends
+
+## Visualization Examples
+
+### Line Chart
+```javascript
+// Example using Chart.js
+const ctx = document.getElementById('emailTrend').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: response.data.labels,
+    datasets: response.data.series
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Email Count'
+        }
+      }
+    }
+  }
+});
+```
+
+### Bar Chart
+```javascript
+// Example for daily comparison
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: response.data.labels,
+    datasets: response.data.series
+  }
+});
+```
+
+## Analysis Metrics
+
+### Daily Totals
+```javascript
+const dailyTotals = response.data.labels.map((label, index) => ({
+  date: label,
+  total: response.data.series[0].data[index] + response.data.series[1].data[index],
+  incoming: response.data.series[0].data[index],
+  sent: response.data.series[1].data[index]
+}));
+```
+
+### Trend Calculations
+```javascript
+// Calculate moving average
+const movingAverage = (data, period) => {
+  return data.map((_, index) => {
+    const start = Math.max(0, index - period + 1);
+    const subset = data.slice(start, index + 1);
+    return subset.reduce((a, b) => a + b, 0) / subset.length;
+  });
+};
+```
+
+## Best Practices
+
+1. **Date Range**: Use reasonable ranges (recommended: max 90 days)
+2. **Caching**: Cache trend data for dashboard performance
+3. **Real-time Updates**: Update trends periodically for live dashboards
+4. **Empty Data**: Handle days with zero emails gracefully
+5. **Time Zones**: Consider converting to local time zones for display
+
+## Performance Considerations
+
+- **Large Ranges**: Longer date ranges may take more time to process
+- **Data Points**: Each day represents a data point
+- **Caching**: Results are cached for 15 minutes by default
+- **Memory Usage**: Large datasets may impact client-side rendering
+
+## Related Endpoints
+
+- Use `/email-meter/stats/hourly-trends` for hourly breakdown
+- Use `/email-meter/stats/email-counts` for aggregate statistics
+- Use `/email-meter/stats/clients/incoming-trends` for client-specific trends
+
+## Notes
+
+- Data includes all email types (incoming, outgoing, internal)
+- Weekends and holidays are included in the trend
+- Zero-value days are included for complete timeline
+- Data is calculated based on email timestamps in UTC
+- Automated emails are included in counts unless filtered
