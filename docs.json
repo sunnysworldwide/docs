@@ -26,6 +26,7 @@
           {
             "group": "Reports",
             "pages": [
+              "reports/reporting-agent",
               "reports/attendance-utilization-report"
             ]
           }
