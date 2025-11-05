@@ -1,0 +1,95 @@
+---
+title: 'Logout'
+openapi: 'POST /auth/logout'
+---
+
+Logout the current user by invalidating their session token. Requires a valid authentication token. After calling this endpoint remove the user data from the client.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+## Response
+
+### 200 OK - Successfully logged out
+
+```json
+{
+  "message": "Successfully logged out John Doe",
+  "data": {}
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid authentication token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X POST 'http://localhost:2000/auth/logout' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This endpoint requires a valid JWT token in the Authorization header
+- The server will invalidate the session token, making it unusable for future requests
+- After successful logout, remove all user data from client-side storage
+- Clear any stored tokens, user information, or session data from your application
+- The response includes a personalized message with the user's name
+- This is the recommended way to properly log out users from the system
+
+## Client-side Implementation
+
+After calling this endpoint, you should:
+
+1. Remove the JWT token from storage (localStorage, sessionStorage, cookies)
+2. Clear user data from your application state
+3. Redirect the user to the login page
+4. Clear any cached data that requires authentication
+
+```javascript
+// Example client-side logout implementation
+async function logout() {
+  try {
+    const response = await fetch('http://localhost:2000/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    // Clear client-side data
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    
+    // Redirect to login
+    window.location.href = '/login';
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+}
+```

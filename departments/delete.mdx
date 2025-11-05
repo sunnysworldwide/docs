@@ -1,0 +1,160 @@
+---
+title: 'Delete Department'
+openapi: 'DELETE /department/{departmentId}'
+---
+
+Admin-only endpoint to delete a department by its ID. Returns the deleted department's basic details if successful.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter     | Type   | Required | Description              |
+|---------------|--------|----------|--------------------------|
+| departmentId  | string | Yes      | Department ID to delete  |
+
+## Response
+
+### 200 OK - Successfully deleted department
+
+```json
+{
+  "message": "Successfully deleted Engineering department",
+  "data": {
+    "deletedDepartment": {
+      "_id": "64b7f2b3e4b0a5d3f9c54321",
+      "name": "Engineering",
+      "description": "Software development and technical operations",
+      "parentId": null,
+      "deletedAt": "2024-01-16T15:30:00.000Z"
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Department does not exist or has active users"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X DELETE 'http://localhost:2000/department/64b7f2b3e4b0a5d3f9c54321' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Department ID must be a valid MongoDB ObjectId
+- **Deletion is permanent** - cannot be undone
+- Department must be empty (no assigned users) to be deleted
+- All sub-departments must be deleted first
+- The response includes the deleted department's details
+- `deletedAt` timestamp is added to track when deletion occurred
+
+## Prerequisites for Deletion
+
+Before deleting a department, ensure:
+
+1. **No Active Users**: All users must be reassigned to other departments
+2. **No Sub-departments**: All child departments must be deleted first
+3. **No Dependencies**: No active workflows depend on this department
+
+## Deletion Workflow
+
+1. **Check Users**: Verify no users are assigned to the department
+2. **Handle Sub-departments**: Delete or move all child departments
+3. **Reassign Users**: Move any remaining users to other departments
+4. **Delete Department**: Call this endpoint to remove the department
+
+## Error Scenarios
+
+### Department has users
+```json
+{
+  "error": {
+    "code": "DEPARTMENT_HAS_USERS",
+    "message": "Cannot delete department with assigned users"
+  }
+}
+```
+
+### Department has sub-departments
+```json
+{
+  "error": {
+    "code": "DEPARTMENT_HAS_CHILDREN",
+    "message": "Cannot delete department with sub-departments"
+  }
+}
+```
+
+## Impact Analysis
+
+### Before Deletion
+- Check user assignments
+- Verify sub-department status
+- Review dependent systems
+
+### After Deletion
+- Department is permanently removed
+- Historical data may reference deleted department
+- Users cannot be assigned to deleted department
+
+## Best Practices
+
+1. **Backup Data**: Export department data before deletion
+2. **User Communication**: Notify affected users of changes
+3. **Gradual Process**: Use deprecation before deletion when possible
+4. **Audit Trail**: Document deletion reasons and approvals
+5. **Testing**: Test deletion process in non-production environment
+
+## Safety Considerations
+
+- **Irreversible Action**: Confirm before proceeding
+- **Data Integrity**: Ensure no broken references
+- **User Impact**: Minimize disruption to users
+- **Compliance**: Follow organizational deletion policies
+
+## Alternative Approaches
+
+Instead of deletion, consider:
+- **Archiving**: Mark department as inactive
+- **Renaming**: Repurpose for new use
+- **Merging**: Combine with another department

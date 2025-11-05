@@ -1,0 +1,142 @@
+---
+title: 'Create Department'
+openapi: 'POST /department/new'
+---
+
+Admin-only endpoint to create a new department.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "name": "Quality Assurance",
+  "description": "Ensures product quality and testing standards",
+  "parentId": "64b7f2b3e4b0a5d3f9c54321"
+}
+```
+
+### Request Body Schema
+
+| Field        | Type   | Required | Description                              |
+|--------------|--------|----------|------------------------------------------|
+| name         | string | Yes      | Department name                          |
+| description  | string | No       | Department description                   |
+| parentId     | string | No       | Parent department ID (for sub-departments) |
+
+#### Field Details
+- **name**: Must be unique within the organization
+- **description**: Optional but recommended for clarity
+- **parentId**: Optional - omit for root-level department
+
+## Response
+
+### 200 OK - Successfully created department
+
+```json
+{
+  "message": "Department created successfully",
+  "data": {
+    "department": {
+      "_id": "64b7f7g8h9i0j1k2l3m4n5o",
+      "name": "Quality Assurance",
+      "description": "Ensures product quality and testing standards",
+      "parentId": "64b7f2b3e4b0a5d3f9c54321",
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Department name already exists"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Create a root-level department
+```bash
+curl -X POST 'http://localhost:2000/department/new' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Marketing",
+    "description": "Marketing and promotional activities"
+  }'
+```
+
+### Create a sub-department
+```bash
+curl -X POST 'http://localhost:2000/department/new' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Digital Marketing",
+    "description": "Online marketing and social media",
+    "parentId": "64b7f7g8h9i0j1k2l3m4n5o"
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Department names must be unique across the entire organization
+- Parent department ID must be a valid MongoDB ObjectId
+- Creating a sub-department requires the parent to exist
+- The created department is returned in the response
+- Timestamps are automatically generated (createdAt, updatedAt)
+- Department names are case-sensitive
+- Consider the organizational structure before creating departments
+
+## Best Practices
+
+1. **Planning**: Map out your department hierarchy before creation
+2. **Naming**: Use clear, descriptive names
+3. **Descriptions**: Provide meaningful descriptions for clarity
+4. **Hierarchy**: Keep hierarchy levels reasonable (recommended: max 5 levels)
+5. **Review**: Review department structure periodically
+
+## Common Use Cases
+
+- Creating new functional departments (e.g., "Data Science")
+- Adding regional offices as departments
+- Setting up project-based departments
+- Restructuring organizational units

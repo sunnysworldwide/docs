@@ -1,0 +1,149 @@
+---
+title: 'Add User Permissions'
+openapi: 'PUT /user/add-permissions'
+---
+
+Adds one or more permissions to a user's existing permissions list. Only admin-level users can perform this action.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "payload": {
+    "userId": "68bb46bb4db8c853599f1ebb",
+    "permissions": [
+      "compass.dashboard.*",
+      "compass.dashboard.overview"
+    ]
+  }
+}
+```
+
+### Request Body Schema
+
+| Field                     | Type     | Required | Description                              |
+|---------------------------|----------|----------|------------------------------------------|
+| payload                   | object   | Yes      | Add permissions payload                 |
+| payload.userId            | string   | Yes      | The ID of the user to update             |
+| payload.permissions       | array    | Yes      | List of permissions to add               |
+
+#### Permission Format
+Permissions follow the pattern: `compass.module.action`
+- Use `*` as wildcard (e.g., `compass.dashboard.*`)
+- Specific actions (e.g., `compass.dashboard.overview`)
+- Module-level access (e.g., `compass.emailmeter`)
+
+## Response
+
+### 200 OK - Successfully added permissions
+
+```json
+{
+  "message": "Successfully added permissions for this user.",
+  "data": {}
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid payload or missing required fields"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid authentication token"
+  }
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User with this ID does not exist anymore"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/user/add-permissions' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payload": {
+      "userId": "68bb46bb4db8c853599f1ebb",
+      "permissions": [
+        "compass.dashboard.*",
+        "compass.dashboard.overview",
+        "compass.emailmeter.stats"
+      ]
+    }
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Permissions are added to the user's existing permissions (not replaced)
+- Duplicate permissions are automatically ignored
+- The user ID must be a valid MongoDB ObjectId
+- Permission strings must follow the defined pattern
+- Changes take effect immediately for the user's next request
+- Use the `/user/remove-permissions` endpoint to remove permissions
+- Permission changes are logged for audit purposes
+
+## Available Permissions
+
+Common permission patterns:
+- `compass.dashboard.*` - Full dashboard access
+- `compass.dashboard.overview` - Dashboard overview only
+- `compass.emailmeter.*` - Full Email Meter access
+- `compass.emailmeter.stats` - Email Meter statistics only
+- `compass.hubspot.*` - Full HubSpot access
+- `compass.users.*` - User management access
+- `compass.departments.*` - Department management access

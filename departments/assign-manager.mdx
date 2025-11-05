@@ -1,0 +1,178 @@
+---
+title: 'Assign Department Manager'
+openapi: 'PUT /department/assign-manager/{departmentId}'
+---
+
+Admin-only endpoint to assign a user as the manager of a department.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Path Parameters
+
+| Parameter     | Type   | Required | Description              |
+|---------------|--------|----------|--------------------------|
+| departmentId  | string | Yes      | Department ID to assign manager to |
+
+### Request Body
+
+```json
+{
+  "userId": "64b7f1a2e4b0a5d3f9c12345"
+}
+```
+
+### Request Body Schema
+
+| Field   | Type   | Required | Description                              |
+|---------|--------|----------|------------------------------------------|
+| userId  | string | Yes      | User ID to assign as department manager  |
+
+#### Field Details
+- **userId**: Valid MongoDB ObjectId of the user to promote to manager
+
+## Response
+
+### 200 OK - Successfully assigned manager
+
+```json
+{
+  "message": "Successfully assigned manager (John Doe) to Engineering department",
+  "data": {
+    "departmentId": "64ef3c29f9a1c27e1b2c3a4d",
+    "manager": {
+      "userId": "64b7f1a2e4b0a5d3f9c12345",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "role": "manager"
+    },
+    "previousManager": {
+      "userId": "64b7f2b3e4b0a5d3f9c54321",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com"
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "User or department not found"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/department/assign-manager/64ef3c29f9a1c27e1b2c3a4d' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "userId": "64b7f1a2e4b0a5d3f9c12345"
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Department ID must be a valid MongoDB ObjectId
+- User ID must be a valid MongoDB ObjectId
+- The assigned user automatically gets "manager" role in the department
+- Previous manager (if any) is demoted to regular member
+- The user must already be a member of the department
+- If user is not in department, they are added first as manager
+
+## Manager Privileges
+
+Department managers typically have:
+- Full department access and control
+- Ability to manage department members
+- Access to department analytics and reports
+- Approval authority for department requests
+- Representation in organizational meetings
+
+## Use Cases
+
+- **Promotion**: Promote a team member to management
+- **Replacement**: Replace departing or transferred manager
+- **Reorganization**: Assign new leadership during restructuring
+- **Interim Management**: Assign temporary manager
+
+## Best Practices
+
+1. **Verify Eligibility**: Ensure user is suitable for management role
+2. **Communicate Changes**: Notify team about leadership changes
+3. **Training**: Provide management training if needed
+4. **Access Review**: Review manager permissions after assignment
+5. **Documentation**: Document the reason for management change
+
+## Error Handling
+
+- **User Not Found**: User ID doesn't exist in system
+- **Department Not Found**: Department ID doesn't exist
+- **Invalid Permissions**: User lacks required permissions
+- **Already Manager**: User is already the department manager
+
+## Impact on Users
+
+### New Manager
+- Gains elevated permissions within department
+- Can view and manage department resources
+- Receives management notifications and reports
+- May see additional dashboard features
+
+### Previous Manager
+- Loses manager privileges but remains in department
+- Retains regular department member access
+- May need to hand over responsibilities
+
+### Department Members
+- See new manager in organizational charts
+- May receive notifications about leadership change
+- Continue with normal department operations
+
+## Security Considerations
+
+- Manager role grants significant permissions
+- Regularly review manager assignments
+- Consider audit trails for management changes
+- Ensure proper authorization for this endpoint
+
+## Related Endpoints
+
+- Use `/department/add-users` to add users to department first
+- Use `/user/update-department-role` for other role assignments
+- Use `/department/list` to verify current assignments

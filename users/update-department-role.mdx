@@ -1,0 +1,112 @@
+---
+title: 'Update Department Role'
+openapi: 'PUT /update-department-role'
+---
+
+Admin-only endpoint to update a user's department role by user ID.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "payload": {
+    "userId": "64ef3c29f9a1c27e1b2c3a4d",
+    "departmentRole": "manager"
+  }
+}
+```
+
+### Request Body Schema
+
+| Field                | Type   | Required | Description                    |
+|----------------------|--------|----------|--------------------------------|
+| payload              | object | Yes      | Update payload                 |
+| payload.userId       | string | Yes      | User ID to update              |
+| payload.departmentRole | string | Yes      | New department role            |
+
+## Response
+
+### 200 OK - Successfully updated department role
+
+```json
+{
+  "message": "Department role updated successfully",
+  "data": {}
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/update-department-role' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payload": {
+      "userId": "64ef3c29f9a1c27e1b2c3a4d",
+      "departmentRole": "manager"
+    }
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- The user ID must be a valid MongoDB ObjectId
+- Department roles can include: "manager", "supervisor", "agent", "admin", etc.
+- The role may affect the user's permissions within their department
+- Only administrators can update other users' department roles
+- Role names should match predefined roles in your system

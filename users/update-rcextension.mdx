@@ -1,0 +1,111 @@
+---
+title: 'Update RingCentral Extension'
+openapi: 'PUT /user/update-rcextension'
+---
+
+Admin-only endpoint to update the Ring Central extension stored in a user's personal information.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "payload": {
+    "userId": "64b7f1a2e4b0a5d3f9c12345",
+    "rcExtension": "1234"
+  }
+}
+```
+
+### Request Body Schema
+
+| Field       | Type   | Required | Description          |
+|-------------|--------|----------|----------------------|
+| payload     | object | Yes      | Update payload       |
+| payload.userId      | string | Yes      | User ID to update    |
+| payload.rcExtension | string | Yes      | New extension number |
+
+## Response
+
+### 200 OK - Successfully updated RC extension
+
+```json
+{
+  "message": "RingCentral extension updated successfully",
+  "data": {}
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/user/update-rcextension' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payload": {
+      "userId": "64b7f1a2e4b0a5d3f9c12345",
+      "rcExtension": "1234"
+    }
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- The extension must be unique across the system
+- Extension numbers should be 2-10 digits long
+- The user ID must be a valid MongoDB ObjectId
+- Only administrators can update other users' extensions

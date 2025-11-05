@@ -1,0 +1,94 @@
+---
+title: 'Get User Profile'
+openapi: 'GET /profile'
+---
+
+Endpoint to get the profile of the logged in user.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+## Response
+
+### 200 OK - Successfully retrieved profile
+
+```json
+{
+  "message": "Profile retrieved successfully",
+  "data": {
+    "_id": "64b7f1a2e4b0a5d3f9c12345",
+    "emails": "user@example.com",
+    "role": "user",
+    "rcExtension": "1234",
+    "phone": "+1-555-555-5555",
+    "department": {
+      "_id": "64b7f2b3e4b0a5d3f9c54321",
+      "name": "Customer Support"
+    },
+    "permissions": ["compass.dashboard.*", "compass.dashboard.overview"]
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid authentication token"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/profile' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This endpoint returns the complete profile information for the authenticated user
+- Includes user details, department information, and assigned permissions
+- Use this to populate user profile pages or verify user session
+- The response contains sensitive information and should be handled securely

@@ -1,0 +1,2949 @@
+openapi: 3.0.3
+info:
+  title: COMPASS API
+  version: 1.0.0
+  description: OpenAPI specification for the Compass backend routes.
+servers:
+  - url: http://localhost:2000
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UpdateRCExtensionPayload:
+      type: object
+      required:
+        - userId
+        - rcExtension
+      properties:
+        userId:
+          type: string
+          example: "64b7f1a2e4b0a5d3f9c12345"
+        rcExtension:
+          type: string
+          example: "1234"
+    UpdatePhonePayload:
+      type: object
+      required:
+        - userId
+        - phone
+      properties:
+        userId:
+          type: string
+          example: "64b7f1a2e4b0a5d3f9c12345"
+        phone:
+          type: string
+          example: "+1-555-555-5555"
+    UpdateDepartmentPayload:
+      type: object
+      required:
+        - userId
+        - departmentId
+      properties:
+        userId:
+          type: string
+          example: "64b7f1a2e4b0a5d3f9c12345"
+        departmentId:
+          type: string
+          example: "64b7f2b3e4b0a5d3f9c54321"
+    CodeParam:
+      type: object
+      properties:
+        code:
+          type: string
+          description: OAuth authorization code
+          example: "4/0AX4XfWj..."
+    UserMinimal:
+      type: object
+      properties:
+        _id:
+          type: string
+        emails:
+          type: string
+          example: "user@example.com"
+        role:
+          type: string
+          example: "user"
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserMinimal"
+    ValidateSessionPayload:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserMinimal"
+    UpdateDepartmentRolePayload:
+      type: object
+      required:
+        - userId
+        - departmentRole
+      properties:
+        userId:
+          type: string
+          description: Unique identifier of the user
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+        departmentRole:
+          type: string
+          description: The new department role to assign
+          example: "manager"
+    UserSummary:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            type: string
+          example: ["user@example.com"]
+        personalInformation:
+          type: object
+          example:
+            firstName: John
+            lastName: Doe
+        role:
+          type: string
+          example: "employee"
+        department:
+          type: object
+          example:
+            id: "64ef3c29f9a1c27e1b2c3a4d"
+            role: "manager"
+        reportsTo:
+          type: string
+          example: "64ef3c29f9a1c27e1b2c3a99"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-09-12T08:30:00Z"
+        config:
+          type: object
+          properties:
+            lastActive:
+              type: string
+              format: date-time
+              example: "2025-09-12T09:15:00Z"
+        linkedAccounts:
+          type: object
+          description: Object of linked accounts meta data.
+          example: { google: { meta: { email: "zain" } } }
+    LinkAccountsPayload:
+      type: object
+      required:
+        - userId
+        - userToLinkId
+      properties:
+        userId:
+          type: string
+          description: The primary user ID to retain
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+        userToLinkId:
+          type: string
+          description: The secondary user ID to merge into the primary account
+          example: "64ef3c29f9a1c27e1b2c3a99"
+    MatchSuggestionUser:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+        emails:
+          type: array
+          items:
+            type: string
+          example: ["user@example.com"]
+        personalInformation:
+          type: object
+          properties:
+            firstName:
+              type: string
+              example: "John"
+            lastName:
+              type: string
+              example: "Doe"
+            name:
+              type: string
+              example: "John Doe"
+    Department:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+        name:
+          type: string
+          example: "Engineering"
+        parentDepartment:
+          type: object
+          description: Parent department info (if applicable)
+          example:
+            _id: "64ef3c29f9a1c27e1b2c3aaa"
+            name: "Technology"
+            description: "Some description for this department"
+            code: "TECH"
+        manager:
+          type: object
+          description: Manager info attached to department
+          $ref: "#/components/schemas/MatchSuggestionUser"
+        description:
+          type: string
+          example: "Handles all software engineering operations"
+    DepartmentWithChildren:
+      allOf:
+        - $ref: "#/components/schemas/Department"
+        - type: object
+          properties:
+            employeesCount:
+              type: integer
+              description: Number of employees in this department
+              example: 25
+            children:
+              type: array
+              description: Nested child departments
+              items:
+                $ref: "#/components/schemas/DepartmentWithChildren"
+    NewDepartment:
+      type: object
+      required:
+        - name
+        - description
+        - code
+        - location
+      properties:
+        name:
+          type: string
+          description: Department name
+          example: "Engineering"
+        description:
+          type: string
+          description: Department description
+          example: "Handles all software engineering operations"
+        code:
+          type: string
+          description: Department code
+          example: "ENG-001"
+        location:
+          type: string
+          description: Department location
+          example: "San Francisco HQ"
+        parentDepartment:
+          type: string
+          nullable: true
+          description: Parent department info
+          example: "68c87b38e0c86b191d1b3c5b"
+    DeletedDepartment:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+        name:
+          type: string
+          example: "Engineering"
+        code:
+          type: string
+          example: "ENG-001"
+        description:
+          type: string
+          example: "Handles all software engineering operations"
+    UpdateDepartment:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Department name (leave empty string `""` if unchanged)
+          example: "Engineering"
+        description:
+          type: string
+          description: Department description (leave empty string `""` if unchanged)
+          example: "Handles all software engineering operations"
+        code:
+          type: string
+          description: Department code (leave empty string `""` if unchanged)
+          example: "ENG-001"
+        location:
+          type: string
+          description: Department location (leave empty string `""` if unchanged)
+          example: "San Francisco HQ"
+        parentDepartment:
+          type: string
+          nullable: true
+          description: >
+            Parent department ID.  
+            - Must be a valid MongoDB ObjectId of an existing department.  
+            - Can be `null` if this department has no parent.  
+            - Leave empty if unchanged.
+          example: "64ef3c29f9a1c27e1b2c3aaa"
+    AddUsersToDepartment:
+      type: object
+      required:
+        - users
+        - departmentRole
+      properties:
+        users:
+          type: array
+          description: List of user IDs to add to the department
+          items:
+            type: string
+            example: "64ef3c29f9a1c27e1b2c3b5e"
+          example:
+            - "64ef3c29f9a1c27e1b2c3b5e"
+            - "64ef3c29f9a1c27e1b2c3b5f"
+        departmentRole:
+          type: string
+          description: Role to assign to the users in the department
+          example: "Manager"
+    AssignDepartmentManager:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: User ID of the manager to assign
+          example: "64ef3c29f9a1c27e1b2c3b5e"
+    StatsSummary:
+      type: object
+      description: Basic statistical summary (min, max, average, median, count)
+      properties:
+        min:
+          type: number
+          format: float
+          description: Minimum observed value (in hours for time-based metrics)
+          example: 0.5
+        max:
+          type: number
+          format: float
+          description: Maximum observed value (in hours for time-based metrics)
+          example: 26.5
+        average:
+          type: number
+          format: float
+          description: Arithmetic average
+          example: 4.2
+        median:
+          type: number
+          format: float
+          description: Statistical median (if used differently in your code)
+          example: 3.9
+        count:
+          type: integer
+          description: Number of samples used to compute these stats
+          example: 200
+
+paths:
+  /auth/signin/google/{code}:
+    get:
+      tags:
+        - Auth
+      summary: Sign in with Google (OAuth code)
+      description: Exchange Google OAuth authorization code for user profile and issue a session token. If the user does not exist, a new user is created.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Authorization code returned by Google's OAuth flow
+      responses:
+        "200":
+          description: Successful sign-in, returns user and token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error / bad request
+        "500":
+          description: Server error
+
+  /auth/signin/microsoft/{code}:
+    get:
+      tags:
+        - Auth
+      summary: Sign in with Microsoft (OAuth code)
+      description: Exchange Microsoft OAuth authorization code for user profile and issue a session token. If the user does not exist, a new user is created.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Authorization code returned by Microsoft's OAuth flow
+      responses:
+        "200":
+          description: Successful sign-in, returns user, token and profile picture
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/UserMinimal"
+                  profilePicture:
+                    type: string
+                    description: Profile picture payload (may be base64 or URL depending on implementation)
+        "400":
+          description: Validation error / bad request
+        "500":
+          description: Server error
+
+  /auth/validate-session:
+    post:
+      tags:
+        - Auth
+      summary: Validate an existing session token and return the user object
+      description: Protected route that returns the user object from the request body when the session is valid. Requires authentication and appropriate role middleware.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateSessionPayload"
+      responses:
+        "200":
+          description: Session valid — returns the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/UserMinimal"
+        "401":
+          description: Unauthorized or invalid session
+        "500":
+          description: Server error
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout the current user
+      description: >
+        Logs out the currently authenticated user by invalidating their session token.  
+        Requires a valid authentication token. After calling this endpoint remove the user data from the client.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully logged out user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully logged out John Doe
+                  data:
+                    type: object
+        "401":
+          description: Unauthorized (missing/invalid token)
+        "500":
+          description: Server error
+
+  /user/update-rcextension:
+    put:
+      tags:
+        - Users
+      summary: Update a user's Ring Central extension
+      description: Admin-only endpoint to update the Ring Central extension stored in a user's personal information.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: "#/components/schemas/UpdateRCExtensionPayload"
+      responses:
+        "200":
+          description: Successfully updated RC extension
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User not found
+        "500":
+          description: Server error
+
+  /user/update-phone:
+    put:
+      tags:
+        - Users
+      summary: Update a user's phone number
+      description: Admin-only endpoint to update the phone number stored in a user's personal information.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: "#/components/schemas/UpdatePhonePayload"
+      responses:
+        "200":
+          description: Successfully updated phone number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User not found
+        "500":
+          description: Server error
+
+  /user/update-department:
+    put:
+      tags:
+        - Users
+      summary: Update a user's department
+      description: Admin-only endpoint to set a user's department by department ID.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: "#/components/schemas/UpdateDepartmentPayload"
+      responses:
+        "200":
+          description: Successfully updated department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User or department not found
+        "500":
+          description: Server error
+
+  /update-department-role:
+    put:
+      tags:
+        - Users
+      summary: Update a user's department role
+      description: Admin-only endpoint to update a user's department role by user ID.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: "#/components/schemas/UpdateDepartmentRolePayload"
+      responses:
+        "200":
+          description: Successfully updated department role
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User not found
+        "500":
+          description: Server error
+
+  /profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      description: Endpoint to get the profile of the logged in user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User not found
+        "500":
+          description: Server error
+
+  /user/list/{start}/{end}:
+    get:
+      tags:
+        - Users
+      summary: Get list of users with pagination
+      description: >
+        Admin-only endpoint to retrieve a list of users.  
+        - If both `start` and `end` are `0`, all users are returned.  
+        - Otherwise, returns users between the given start and end indexes (zero-based).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: Starting index (0 for beginning)
+          example: 0
+        - name: end
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: Ending index (0 to return all users)
+          example: 10
+        - name: departmentFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: >
+            Department ID to filter users by.  
+            - Must be a valid MongoDB ObjectId of a department.  
+            - Can be `null` to return all users that is not a part of any department.
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+      responses:
+        "200":
+          description: Successfully retrieved user list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: Total number of users
+                        example: 25
+                      users:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/UserSummary"
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /user/link-accounts:
+    post:
+      tags:
+        - Users
+      summary: Link two user accounts
+      description: >
+        Admin-only endpoint to link a secondary user account into a primary account.  
+        - The `userToLinkId` account will be deleted after merging its linked accounts into the primary `userId`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: "#/components/schemas/LinkAccountsPayload"
+      responses:
+        "200":
+          description: Successfully linked accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      updatedPrimaryUser:
+                        $ref: "#/components/schemas/UserSummary"
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: User not found
+        "500":
+          description: Server error
+
+  /user/match-suggestions:
+    get:
+      tags:
+        - Users
+      summary: Get suggested user account matches
+      description: >
+        Admin-only endpoint that returns suggested user pairs that may represent the same person.  
+        Suggestions are generated by comparing emails and personal information (first name, last name, name).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved match suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      suggestions:
+                        type: array
+                        description: Array of suggested user pairs
+                        items:
+                          type: array
+                          minItems: 2
+                          maxItems: 2
+                          items:
+                            $ref: "#/components/schemas/MatchSuggestionUser"
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /user/add-permissions:
+    put:
+      tags:
+        - Users
+      summary: Add permissions to a user
+      description: |
+        Adds one or more permissions to a user's existing permissions list.  
+        Only admin-level users can perform this action.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payload
+              properties:
+                payload:
+                  type: object
+                  required:
+                    - userId
+                    - permissions
+                  properties:
+                    userId:
+                      type: string
+                      description: The ID of the user whose permissions are to be updated.
+                      example: "68bb46bb4db8c853599f1ebb"
+                    permissions:
+                      type: array
+                      description: List of permissions to add to the user.
+                      items:
+                        type: string
+                        example: "compass.dashboard.*"
+            example:
+              payload:
+                userId: "68bb46bb4db8c853599f1ebb"
+                permissions:
+                  - "compass.dashboard.*"
+                  - "compass.dashboard.overview"
+
+      responses:
+        "200":
+          description: Successfully added permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully added permissions for this user.
+                  data:
+                    type: object
+                    example: {}
+        "400":
+          description: Invalid payload or missing required fields
+        "401":
+          description: Unauthorized – Missing or invalid authentication token
+        "403":
+          description: Forbidden – Insufficient permissions
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: User with this ID does not exist anymore
+        "500":
+          description: Internal server error
+
+  /user/remove-permissions:
+    put:
+      tags:
+        - Users
+      summary: Remove permissions from a user
+      description: |
+        Removes one or more permissions from a user's existing permissions list.  
+        Only admin-level users can perform this action.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payload
+              properties:
+                payload:
+                  type: object
+                  required:
+                    - userId
+                    - permissions
+                  properties:
+                    userId:
+                      type: string
+                      description: The ID of the user whose permissions are to be updated.
+                      example: "68bb46bb4db8c853599f1ebb"
+                    permissions:
+                      type: array
+                      description: List of permissions to remove from the user.
+                      items:
+                        type: string
+                        example: "compass.dashboard.*"
+            example:
+              payload:
+                userId: "68bb46bb4db8c853599f1ebb"
+                permissions:
+                  - "compass.dashboard.*"
+                  - "compass.dashboard.overview"
+
+      responses:
+        "200":
+          description: Successfully removed permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully removed permissions for this user.
+                  data:
+                    type: object
+                    example: {}
+        "400":
+          description: Invalid payload or missing required fields
+        "401":
+          description: Unauthorized – Missing or invalid authentication token
+        "403":
+          description: Forbidden – Insufficient permissions
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: User with this ID does not exist anymore
+        "500":
+          description: Internal server error
+
+  /department/list/{start}/{end}:
+    get:
+      tags:
+        - Departments
+      summary: Get list of departments with pagination
+      description: >
+        Admin-only endpoint to retrieve a list of departments.  
+        - If both `start` and `end` are `0`, all departments are returned.  
+        - Otherwise, returns departments between the given start and end indexes (zero-based).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: Starting index (0 for beginning)
+          example: 0
+        - name: end
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: Ending index (0 to return all departments)
+          example: 10
+      responses:
+        "200":
+          description: Successfully retrieved department list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: Total number of departments
+                        example: 15
+                      departments:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Department"
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /department/hierarchy:
+    get:
+      tags:
+        - Departments
+      summary: Get department hierarchy
+      description: >
+        Admin-only endpoint that retrieves the full hierarchical structure of all departments.  
+        Each department may include nested child departments inside the `children` array.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved department hierarchy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      departments:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/DepartmentWithChildren"
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /department/new:
+    post:
+      tags:
+        - Departments
+      summary: Create a new department
+      description: Admin-only endpoint to create a new department.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              $ref: "#/components/schemas/NewDepartment"
+      responses:
+        "200":
+          description: Successfully created department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      department:
+                        $ref: "#/components/schemas/Department"
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /department/{departmentId}:
+    delete:
+      tags:
+        - Departments
+      summary: Delete a department
+      description: >
+        Admin-only endpoint to delete a department by its ID.  
+        Returns the deleted department’s basic details if successful.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the department to delete
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+      responses:
+        "200":
+          description: Successfully deleted department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully deleted Engineering department
+                  data:
+                    type: object
+                    properties:
+                      deletedDepartment:
+                        $ref: "#/components/schemas/DeletedDepartment"
+        "400":
+          description: Validation error / department does not exist
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /department/update/{departmentId}:
+    put:
+      tags:
+        - Departments
+      summary: Update an existing department
+      description: Admin-only endpoint to update department details.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: departmentId
+          required: true
+          schema:
+            type: string
+            description: Department ID to update
+            example: "64ef3c29f9a1c27e1b2c3a4d"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartment"
+      responses:
+        "200":
+          description: Successfully updated department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully updated Engineering department
+                  data:
+                    type: object
+                    properties:
+                      department:
+                        $ref: "#/components/schemas/Department"
+        "400":
+          description: Validation error / bad request
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "404":
+          description: Department not found
+        "500":
+          description: Server error
+
+  /department/add-users/{departmentId}:
+    put:
+      tags:
+        - Departments
+      summary: Add users to a department
+      description: >
+        Admin-only endpoint to add multiple users to a department with a specific role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: departmentId
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the department
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddUsersToDepartment"
+      responses:
+        "200":
+          description: Successfully added users to department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully added users to Engineering department
+                  data:
+                    type: object
+        "400":
+          description: Validation error / department not found
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /department/assign-manager/{departmentId}:
+    put:
+      tags:
+        - Departments
+      summary: Assign a manager to a department
+      description: >
+        Admin-only endpoint to assign a user as the manager of a department.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: departmentId
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the department
+          example: "64ef3c29f9a1c27e1b2c3a4d"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignDepartmentManager"
+      responses:
+        "200":
+          description: Successfully assigned manager
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully assigned manager (John Doe) to Engineering department
+                  data:
+                    type: object
+        "400":
+          description: Validation error / user or department not found
+        "401":
+          description: Unauthorized (missing/invalid token or insufficient permissions)
+        "500":
+          description: Server error
+
+  /email-meter/signin/{code}:
+    post:
+      tags:
+        - Email Meter
+      summary: Connect Reservations Microsoft account for Email Meter
+      description: >
+        Authenticates and links a Microsoft account for Email Meter analytics.  
+        This endpoint exchanges an authorization code for access tokens and sets up email subscriptions.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: >
+            Authorization code returned by Microsoft OAuth after user consent.  
+            Used to obtain access and refresh tokens.
+          schema:
+            type: string
+          example: "0.AAAA1sdfjklsdfLKJ1234xyz..."
+      responses:
+        "200":
+          description: Successfully authenticated and configured Email Meter integration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Success
+                  data:
+                    type: object
+        "400":
+          description: Invalid or expired authorization code
+        "401":
+          description: Unauthorized (missing/invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/reservation-hook:
+    post:
+      tags:
+        - Email Meter
+      summary: Microsoft Graph webhook for new email notifications
+      description: >
+        Webhook endpoint used by Microsoft Graph for email notification events.  
+        - During subscription setup, Microsoft Graph sends a **validation token** as a query parameter, which must be echoed back.  
+        - For subsequent notifications, Microsoft Graph sends email event data in the request body.  
+        - This endpoint does **not require authentication** since it's called by Microsoft servers.
+      parameters:
+        - name: validationToken
+          in: query
+          required: false
+          description: >
+            Validation token sent by Microsoft Graph during webhook registration.  
+            The API must return this token as plain text to validate the subscription.
+          schema:
+            type: string
+          example: "ValidationTokenExample123456"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: array
+                  description: Array of Microsoft Graph notification objects.
+                  items:
+                    type: object
+                    properties:
+                      subscriptionId:
+                        type: string
+                        example: "a12b34cd-56e7-890f-12gh-3456ijkl7890"
+                      changeType:
+                        type: string
+                        example: "created"
+                      resource:
+                        type: string
+                        example: "me/messages/AAMkADNkZDIxY2E1L..."
+                      resourceData:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "AAMkADNkZDIxY2E1LTQzNDUtNGUwYS04ZTFlLTY1NjVhYjMxZTc2MwBGAAAAA..."
+      responses:
+        "200":
+          description: Successfully processed the webhook event or returned validation token
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ValidationTokenExample123456
+        "400":
+          description: Invalid or malformed request
+        "500":
+          description: Server error
+
+  /email-meter/stats/email-counts/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get email statistics (incoming, sent, spam, responses)
+      description: >
+        Returns email conversation and thread statistics for a specified date range.  
+        - Counts total conversations, responded conversations, spam, and "no response required" messages.  
+        - Tracks incoming and sent email counts, average thread size, and number of unique email addresses involved.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          description: Start date for the report (ISO 8601 format).
+            If invalid or missing, defaults to a week from today.
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-01T00:00:00.000Z"
+        - name: endDate
+          in: path
+          required: true
+          description: End date for the report (ISO 8601 format).
+            If invalid or missing, defaults to today.
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-20T23:59:59.000Z"
+      responses:
+        "200":
+          description: Successfully retrieved email statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      conversations:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 120
+                          respondend:
+                            type: integer
+                            example: 95
+                          spam:
+                            type: integer
+                            example: 10
+                          noResponseRequired:
+                            type: integer
+                            example: 15
+                      threadsCounts:
+                        type: object
+                        properties:
+                          incoming:
+                            type: integer
+                            example: 250
+                          sent:
+                            type: integer
+                            example: 180
+                          average:
+                            type: number
+                            format: float
+                            example: 3.2
+                      uniqueAddresses:
+                        type: integer
+                        description: Count of unique email addresses involved in the conversations
+                        example: 85
+        "400":
+          description: Invalid date range or malformed request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/response-times/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get email response time statistics
+      description: >
+        Returns detailed response time metrics for emails within the specified date range.  
+        - Includes both **first response** and **overall response** time statistics.  
+        - Also reports SLA(Service Level Agreement currently 15 mins) compliance breakdown (responses within SLA vs. after SLA).  
+        - If no/invalid startDate or endDate is provided, the system defaults to the last 7 days (a week from today).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          description: Start date for the report (ISO 8601 format).
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-01T00:00:00.000Z"
+        - name: endDate
+          in: path
+          required: true
+          description: End date for the report (ISO 8601 format).
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-20T23:59:59.000Z"
+      responses:
+        "200":
+          description: Successfully retrieved response time statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        description: Statistics for the first response time to incoming emails.
+                        properties:
+                          min:
+                            type: number
+                            format: float
+                            description: Minimum response time in hours
+                            example: 0.5
+                          max:
+                            type: number
+                            format: float
+                            description: Maximum response time in hours
+                            example: 24.0
+                          average:
+                            type: number
+                            format: float
+                            description: Average response time in hours
+                            example: 4.2
+                          median:
+                            type: number
+                            format: float
+                            description: Median response time in hours
+                            example: 3.9
+                      overall:
+                        type: object
+                        description: Statistics for all responses (not just the first).
+                        properties:
+                          min:
+                            type: number
+                            format: float
+                            example: 0.3
+                          max:
+                            type: number
+                            format: float
+                            example: 26.5
+                          average:
+                            type: number
+                            format: float
+                            example: 5.8
+                          median:
+                            type: number
+                            format: float
+                            example: 5.0
+                      sla:
+                        type: object
+                        description: SLA performance metrics
+                        properties:
+                          withinSLA:
+                            type: integer
+                            description: Number of responses that met the SLA
+                            example: 180
+                          afterSLA:
+                            type: integer
+                            description: Number of responses that exceeded the SLA
+                            example: 20
+                          percentage:
+                            type: number
+                            format: float
+                            description: Percentage of responses within SLA
+                            example: 90.0
+        "400":
+          description: Invalid date range or malformed request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/emails-trend/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get daily email activity trend
+      description: >
+        Retrieves the trend of incoming and sent emails across the specified date range.  
+        - If no `startDate` or `endDate` is provided, the system defaults to the last 7 days (a week from today).  
+        - Each label in `labels` corresponds to a date in the range, and `series` contains counts of sent and received emails for each day.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date of the range (ISO 8601). Defaults to 7 days before today if not provided.
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date of the range (ISO 8601). Defaults to today if not provided.
+          example: "2025-10-07"
+      responses:
+        "200":
+          description: Successfully retrieved email activity trend
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      series:
+                        type: array
+                        description: List of data series for incoming and sent emails
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Incoming
+                            data:
+                              type: array
+                              items:
+                                type: integer
+                              example: [12, 18, 9, 25, 14, 22, 19]
+                      labels:
+                        type: array
+                        description: Dates corresponding to each data point
+                        items:
+                          type: string
+                          format: date
+                        example:
+                          [
+                            "2025-10-01",
+                            "2025-10-02",
+                            "2025-10-03",
+                            "2025-10-04",
+                            "2025-10-05",
+                            "2025-10-06",
+                            "2025-10-07",
+                          ]
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/agents-highlevel/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get high-level agent performance statistics
+      description: >
+        Retrieves high-level metrics for agent performance and email assignment efficiency within the given date range.  
+        - Includes statistics on **time to assign agents** and **number of agents per conversation**.  
+        - If no `startDate` or `endDate` is provided, defaults to the last 7 days (a week from today).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            Start date of the range (ISO 8601).  
+            Defaults to 7 days before today if not provided.
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            End date of the range (ISO 8601).  
+            Defaults to today if not provided.
+          example: "2025-10-07"
+      responses:
+        "200":
+          description: Successfully retrieved agent high-level statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      agentAssignmentTimes:
+                        type: object
+                        description: Metrics about how quickly agents were assigned to conversations
+                        properties:
+                          first:
+                            $ref: "#/components/schemas/StatsSummary"
+                          overall:
+                            $ref: "#/components/schemas/StatsSummary"
+                      agentsCount:
+                        $ref: "#/components/schemas/StatsSummary"
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/resolved-times/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get conversation resolution time statistics
+      description: >
+        Retrieves metrics about how long conversations take to resolve.  
+        - Includes resolution times from the **first received email** and from the **last assigned agent**, both with and without delays.  
+        - If no `startDate` or `endDate` is provided, defaults to the last 7 days (a week from today).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            Start date of the range (ISO 8601).  
+            Defaults to 7 days before today if not provided.
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            End date of the range (ISO 8601).  
+            Defaults to today if not provided.
+          example: "2025-10-07"
+      responses:
+        "200":
+          description: Successfully retrieved resolution time statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      fromFirstEmail:
+                        $ref: "#/components/schemas/StatsSummary"
+                      fromLastAssignedAgent:
+                        type: object
+                        properties:
+                          withDelays:
+                            $ref: "#/components/schemas/StatsSummary"
+                          withoutDelays:
+                            $ref: "#/components/schemas/StatsSummary"
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/agents/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get detailed agent-level performance statistics
+      description: >
+        Retrieves detailed statistics for each agent within the given date range.  
+        Includes counts, response time distributions (with and without delays), and resolution times.  
+        If `startDate` or `endDate` are not provided, the date range defaults to one week from today.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            Start date of the range (ISO 8601).  
+            Defaults to 7 days before today if not provided.
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            End date of the range (ISO 8601).  
+            Defaults to today if not provided.
+          example: "2025-10-07"
+      responses:
+        "200":
+          description: Successfully retrieved agent-level statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      totalAssignments:
+                        type: integer
+                        example: 245
+                        description: Total number of email assignments across all agents
+                      agents:
+                        type: array
+                        description: List of agents and their corresponding performance metrics
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "John Doe"
+                            stats:
+                              type: object
+                              properties:
+                                emailsAssigned:
+                                  type: integer
+                                  example: 48
+                                resolved:
+                                  type: object
+                                  properties:
+                                    withDelays:
+                                      type: object
+                                      properties:
+                                        total:
+                                          type: integer
+                                          example: 10
+                                        stats:
+                                          $ref: "#/components/schemas/StatsSummary"
+                                    withoutDelays:
+                                      type: object
+                                      properties:
+                                        total:
+                                          type: integer
+                                          example: 35
+                                        stats:
+                                          $ref: "#/components/schemas/StatsSummary"
+                                responseTimes:
+                                  type: object
+                                  properties:
+                                    withDelays:
+                                      type: object
+                                      properties:
+                                        total:
+                                          type: integer
+                                          example: 12
+                                        stats:
+                                          $ref: "#/components/schemas/StatsSummary"
+                                    withoutDelays:
+                                      type: object
+                                      properties:
+                                        total:
+                                          type: integer
+                                          example: 42
+                                        stats:
+                                          $ref: "#/components/schemas/StatsSummary"
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/flags/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get flagged and completion time statistics
+      description: >
+        Retrieves statistics related to flagged conversations, including the time to flag and the time to complete resolution after flagging.  
+        If `startDate` or `endDate` are not provided, defaults to the last 7 days.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            Start date of the range (ISO 8601).  
+            Defaults to 7 days before today if not provided.
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: >
+            End date of the range (ISO 8601).  
+            Defaults to today if not provided.
+          example: "2025-10-07"
+      responses:
+        "200":
+          description: Successfully retrieved flag and completion statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      times:
+                        type: object
+                        description: Duration statistics for flagged and completed items
+                        properties:
+                          flagged:
+                            $ref: "#/components/schemas/StatsSummary"
+                          complete:
+                            type: object
+                            properties:
+                              fromFlagged:
+                                $ref: "#/components/schemas/StatsSummary"
+                              fromUnFlagged:
+                                $ref: "#/components/schemas/StatsSummary"
+                      counts:
+                        type: object
+                        description: Count-based flag statistics
+                        properties:
+                          totalFlagged:
+                            type: integer
+                            example: 35
+                          completedFromFlagged:
+                            type: integer
+                            example: 28
+                          completedFromUnFlagged:
+                            type: integer
+                            example: 14
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /email-meter/stats/hourly-trends/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get hourly email traffic trends
+      description: >
+        Returns hourly email volume (received and sent) between the given start and end dates.  
+        Each day is broken down into 24 hourly buckets, showing how many emails were received and sent during each hour.
+
+        - **If no date range is provided**, the system automatically adjusts it to a week from today.  
+        - **Each entry** in the result corresponds to an hour of the day (`00:00:00` → `23:00:00`).  
+        - Useful for visualizing hourly trends in dashboards.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the range (YYYY-MM-DD)
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the range (YYYY-MM-DD)
+          example: "2025-10-07"
+
+      responses:
+        "200":
+          description: Hourly email trends between given dates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      labels:
+                        type: array
+                        description: Hour labels from 00:00:00 to 23:00:00
+                        items:
+                          type: string
+                          example: "08:00:00"
+                        example:
+                          - "00:00:00"
+                          - "01:00:00"
+                          - "02:00:00"
+                      series:
+                        type: object
+                        description: Email trends for each day in the date range
+                        properties:
+                          received:
+                            type: array
+                            description: Series showing received emails per hour per day
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Date of the data point (YYYY-MM-DD)
+                                  example: "2025-10-01"
+                                data:
+                                  type: array
+                                  description: 24-hour email counts
+                                  items:
+                                    type: integer
+                                    example: 12
+                                  example:
+                                    [
+                                      0,
+                                      1,
+                                      3,
+                                      2,
+                                      5,
+                                      10,
+                                      6,
+                                      8,
+                                      3,
+                                      1,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                    ]
+                          sent:
+                            type: array
+                            description: Series showing sent emails per hour per day
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "2025-10-01"
+                                data:
+                                  type: array
+                                  items:
+                                    type: integer
+                                    example: 7
+                                  example:
+                                    [
+                                      0,
+                                      2,
+                                      5,
+                                      1,
+                                      3,
+                                      8,
+                                      6,
+                                      4,
+                                      2,
+                                      1,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                    ]
+        "400":
+          description: Invalid date format or missing parameters
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Internal server error
+
+  /email-meter/stats/clients/top-10/:startDate/:endDate:
+    get:
+      tags:
+        - Email Meter
+      summary: Get top client domains by email volume
+      description: >
+        Returns the top 10 client domains ranked by the number of email conversations within the given date range.
+
+        - The endpoint counts how many new emails came from each domain.
+        - Results are sorted by descending frequency (highest first).
+        - If no date range is provided, the system automatically adjusts it to **a week from today**.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the range (YYYY-MM-DD)
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the range (YYYY-MM-DD)
+          example: "2025-10-07"
+
+      responses:
+        "200":
+          description: Successfully retrieved top client domains
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      topClients:
+                        type: array
+                        description: List of top 10 domains ranked by email volume
+                        items:
+                          type: object
+                          properties:
+                            domain:
+                              type: string
+                              description: The client’s email domain name
+                              example: "gmail.com"
+                            count:
+                              type: integer
+                              description: Number of conversations with this domain
+                              example: 124
+                        example:
+                          - domain: "gmail.com"
+                            count: 124
+                          - domain: "yahoo.com"
+                            count: 87
+                          - domain: "company.com"
+                            count: 72
+        "400":
+          description: Invalid date range or bad request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Internal server error
+
+  /email-meter/stats/clients/lowest-resolved/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get clients with the lowest resolved conversations
+      description: >
+        Returns the **top 3 client domains** that have the **highest number of unresolved conversations** within the given date range.
+
+        - A conversation is considered **unresolved** if it does **not** contain a `resolved` category.  
+        - The system automatically adjusts the date range to **a week from today** if not provided.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the range (YYYY-MM-DD)
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the range (YYYY-MM-DD)
+          example: "2025-10-07"
+
+      responses:
+        "200":
+          description: Successfully retrieved clients with lowest resolved conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      clientsByLowestResolved:
+                        type: array
+                        description: Top 3 client domains with the most unresolved conversations
+                        items:
+                          type: object
+                          properties:
+                            domain:
+                              type: string
+                              description: The client's email domain
+                              example: "example.com"
+                            count:
+                              type: integer
+                              description: Number of unresolved conversations
+                              example: 15
+                        example:
+                          - domain: "example.com"
+                            count: 15
+                          - domain: "client.org"
+                            count: 12
+                          - domain: "mail.com"
+                            count: 8
+        "400":
+          description: Invalid date range or bad request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Internal server error
+
+  /email-meter/stats/clients/incoming-emails-trend/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get incoming email trends for top client domains
+      description: >
+        Returns the **daily incoming email trends** for the **top 5 client domains** 
+        within the specified date range.
+
+        - Only incoming emails are counted.  
+        - If no date range is provided, the system automatically adjusts it to a **week from today**.  
+        - The response provides a `series` array suitable for time-series visualization (e.g., line chart).
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the trend range (YYYY-MM-DD)
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the trend range (YYYY-MM-DD)
+          example: "2025-10-07"
+
+      responses:
+        "200":
+          description: Successfully retrieved incoming email trends for top client domains
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      labels:
+                        type: array
+                        description: List of top client domains
+                        items:
+                          type: string
+                        example:
+                          - "example.com"
+                          - "client.org"
+                          - "partner.net"
+                      series:
+                        type: array
+                        description: Incoming email count trends per domain
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: Domain name
+                              example: "example.com"
+                            data:
+                              type: array
+                              description: Daily incoming email counts for the domain
+                              items:
+                                type: integer
+                                example: 12
+                        example:
+                          - name: "example.com"
+                            data: [3, 6, 4, 2, 7, 5, 8]
+                          - name: "client.org"
+                            data: [1, 4, 3, 5, 2, 1, 0]
+        "400":
+          description: Invalid date range or bad request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Internal server error
+
+  /email-meter/stats/clients/longest-response-times/{startDate}/{endDate}:
+    get:
+      tags:
+        - Email Meter
+      summary: Get clients with the longest response times
+      description: >
+        Returns the **top 10 client domains** with the **longest median response times** 
+        over the specified date range.
+
+        - Calculates response times from all email conversations.  
+        - Includes both **overall stats** and **per-domain median response times**.  
+        - If the date range is not provided, it defaults to **a week from today**.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the analysis (YYYY-MM-DD)
+          example: "2025-10-01"
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the analysis (YYYY-MM-DD)
+          example: "2025-10-07"
+
+      responses:
+        "200":
+          description: Successfully retrieved response time statistics for client domains
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      responseTimes:
+                        type: object
+                        properties:
+                          overall:
+                            type: object
+                            description: Overall response time statistics across all clients
+                            properties:
+                              min:
+                                type: number
+                                description: Minimum response time (in minutes)
+                                example: 2
+                              max:
+                                type: number
+                                description: Maximum response time (in minutes)
+                                example: 185
+                              average:
+                                type: number
+                                description: Average response time (in minutes)
+                                example: 54.3
+                              median:
+                                type: number
+                                description: Median response time (in minutes)
+                                example: 48.5
+                          domains:
+                            type: array
+                            description: List of top 10 client domains with highest median response times
+                            items:
+                              type: object
+                              properties:
+                                domain:
+                                  type: string
+                                  description: Client domain name
+                                  example: "example.com"
+                                median:
+                                  type: number
+                                  description: Median response time (in minutes)
+                                  example: 72.4
+                        example:
+                          overall:
+                            min: 5
+                            max: 210
+                            average: 64.8
+                            median: 58.2
+                          domains:
+                            - domain: "client1.com"
+                              median: 122.5
+                            - domain: "business.co"
+                              median: 98.7
+                            - domain: "partner.io"
+                              median: 77.3
+        "400":
+          description: Invalid date range or bad request
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Internal server error
+
+  /hubspot/tickets/list/filters:
+    get:
+      tags:
+        - HubSpot Tickets
+      summary: Get available HubSpot ticket filters
+      description: >
+        Retrieves possible filters and their values to be displayed in the frontend dropdowns.  
+        Currently supports two filter types:
+        - **Agents** (all agents)  
+        - **Categories** (all feedback categories)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved filter options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      agents:
+                        type: array
+                        description: List of agent options
+                        items:
+                          type: object
+                          properties:
+                            label:
+                              type: string
+                              example: "Abdullah"
+                            value:
+                              type: string
+                              example: "abdullah"
+                      categories:
+                        type: array
+                        description: List of category options
+                        items:
+                          type: object
+                          properties:
+                            label:
+                              type: string
+                              example: "Late Driver"
+                            value:
+                              type: string
+                              example: "Late Driver"
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /hubspot/tickets/list/{startDate}/{endDate}/{startIndex}/{endIndex}:
+    get:
+      tags:
+        - HubSpot Tickets
+      summary: Get HubSpot tickets list with filters and pagination
+      description: >
+        Retrieves a list of HubSpot tickets within the specified date range and pagination window.  
+        Supports filtering by agent, feedback category, search keyword, and department code.  
+
+        **Notes:**
+        - If the calculated `pageSize` (`endIndex - startIndex`) exceeds **50**, it is automatically resized to 50. 
+        - `search` looks into the following fields: `content`, `chauffeur_name`, `passenger_name`, and `subject`.  
+        - `agentInvolved` and `feedbackCategory` must match values returned from the [/hubspot/tickets/list/filters](#/hubspot/tickets/list/filters) endpoint.  
+        - `departmentCode` must be a valid department code in the system.
+        - `closedOnly` must be a "false"/"true" in string default 'false'. Returns only closed tickets
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: startDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for filtering tickets (inclusive)
+          example: "2025-10-01"
+
+        - name: endDate
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for filtering tickets (inclusive)
+          example: "2025-10-21"
+
+        - name: startIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: Starting index for pagination
+          example: 0
+
+        - name: endIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Ending index for pagination (max page size = 50)
+          example: 50
+
+        - name: agentInvolved
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: Filter by agent (must be one of the agents returned from `/hubspot/tickets/list/filters`)
+          example: "abdullah"
+
+        - name: feedbackCategory
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: Filter by category (must be one of the categories returned from `/hubspot/tickets/list/filters`)
+          example: "Late Driver"
+
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: >
+            Keyword to search across multiple fields —  
+            `content`, `chauffeur_name`, `passenger_name`, and `subject`.
+          example: "airport delay"
+
+        - name: departmentCode
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: Valid department code to filter tickets by department
+          example: "OPS"
+
+        - name: closedOnly
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: false
+          description: closedOnly must be a "false"/"true" in string default 'false'. Returns only closed tickets.
+          example: "true"
+
+      responses:
+        "200":
+          description: Successfully retrieved filtered ticket list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: array
+                    description: Array of matching tickets
+                    items:
+                      type: object
+                      description: Ticket summary object (fields vary depending on HubSpot schema)
+                      example:
+                        total: 20
+                        results: []
+
+        "400":
+          description: Invalid filter or pagination parameters
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /hubspot/ticket-details/{ticketId}:
+    get:
+      tags:
+        - HubSpot Tickets
+      summary: Get detailed information of a specific HubSpot ticket
+      description: >
+        Retrieves the full details of a single HubSpot ticket using its unique `ticketId`.  
+        Requires authentication and a valid HubSpot ticket ID.
+
+        The endpoint validates the ticket ID before fetching data and returns complete
+        ticket metadata including content, related contacts, categories, and assigned agent.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique HubSpot Ticket ID
+          example: "123456789"
+
+      responses:
+        "200":
+          description: Successfully retrieved ticket details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    description: HubSpot ticket details
+                    properties:
+                      id:
+                        type: string
+                        example: "123456789"
+
+        "400":
+          description: Invalid or missing ticket ID
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "404":
+          description: Ticket not found
+        "500":
+          description: Server error
+
+  /hubspot/tickets/list/export:
+    post:
+      tags:
+        - HubSpot Tickets
+      summary: Export HubSpot tickets list
+      description: >
+        Exports HubSpot tickets based on selected filters, columns, and department.  
+        The response returns a downloadable file (Excel, CSV, or JSON) depending on the requested format.
+
+        - **Requires authentication**  
+        - If no format is specified, defaults to `xlsx`.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - format
+                - columns
+              properties:
+                format:
+                  type: string
+                  description: >
+                    Output file format. Must be one of:  
+                    - `xlsx` for Excel  
+                    - `csv` for CSV  
+                    - `json` for JSON
+                  enum: [xlsx, csv, json]
+                  example: xlsx
+                columns:
+                  type: array
+                  description: List of ticket fields to include in the export.
+                  items:
+                    type: string
+                    example: subject
+                  example:
+                    - ticketId
+                    - subject
+                    - feedbackCategory
+                    - agentInvolved
+                    - createdAt
+                departmentCode:
+                  type: string
+                  description: >
+                    Optional department code to filter exported tickets.  
+                    Must be a valid department code.
+                  example: OPS
+
+      responses:
+        "200":
+          description: Successfully generated export file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Downloadable export file (Excel, CSV, or JSON)
+        "400":
+          description: Invalid request body or validation error
+        "401":
+          description: Unauthorized (missing or invalid token)
+        "500":
+          description: Server error
+
+  /permissions/list:
+    get:
+      tags:
+        - Permissions
+      summary: Get the list of available permissions
+      description: |
+        Returns a list of all available system permissions.
+
+        By default, permissions are **grouped by category** (e.g., `admin`, `user-management`, `ticketing`).
+        If the `noGrouping` query parameter is set to `true`, the endpoint returns a flat array instead.
+
+        > ⚠️ This endpoint replaces the legacy **`/api-keys/scopes`** route.
+        >
+        > Accessible **only to admin users**.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: noGrouping
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >
+            If set to `true`, permissions are returned as a flat array instead of being grouped by category.
+
+      responses:
+        "200":
+          description: Successfully retrieved permissions list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      permissions:
+                        oneOf:
+                          - type: object
+                            description: Grouped permissions by category
+                            additionalProperties:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  permission:
+                                    type: string
+                                    example: "tickets.view"
+                                  description:
+                                    type: string
+                                    example: "View tickets in the helpdesk system"
+                                  category:
+                                    type: string
+                                    example: "ticketing"
+                            example:
+                              admin:
+                                - permission: "*"
+                                  description: "All permissions - Full system access"
+                                  category: "admin"
+                              user-management:
+                                - permission: "users.manage"
+                                  description: "Create, update, or delete user accounts"
+                                  category: "user-management"
+                          - type: array
+                            description: Flat array of permissions (when `noGrouping=true`)
+                            items:
+                              type: object
+                              properties:
+                                permission:
+                                  type: string
+                                  example: "tickets.view"
+                                description:
+                                  type: string
+                                  example: "View tickets in the helpdesk system"
+                                category:
+                                  type: string
+                                  example: "ticketing"
+                            example:
+                              - permission: "*"
+                                description: "All permissions - Full system access"
+                                category: "admin"
+                              - permission: "users.manage"
+                                description: "Create, update, or delete user accounts"
+                                category: "user-management"
+                              - permission: "tickets.view"
+                                description: "View tickets in the helpdesk system"
+                                category: "ticketing"
+
+        "401":
+          description: Unauthorized – missing or invalid token
+        "403":
+          description: Forbidden – only admin users can access this endpoint
+        "500":
+          description: Internal server error
+
+  /transcription/get-transcription/{fileId}:
+    post:
+      tags:
+        - Transcription
+      summary: Get or generate transcription for an audio file
+      description: |
+        Retrieves the transcription for a given file.  
+        If no transcription exists in the system, and a valid `audioUrl` is provided, a new transcription will be generated and stored.
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          description: Unique identifier of the audio file.
+          schema:
+            type: string
+            example: "670fcae25abf2d8e5c8a4a12"
+
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audioUrl:
+                  type: string
+                  description: URL of the audio file used for transcription (required only if no existing transcription is found).
+                  example: "https://example.com/uploads/audio-file.mp3"
+
+            example:
+              audioUrl: "https://example.com/uploads/audio-file.mp3"
+
+      responses:
+        "200":
+          description: Successfully retrieved or generated transcription
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ""
+                  data:
+                    type: object
+                    properties:
+                      transcriptionData:
+                        type: object
+                        description: Contains the transcription result and related metadata.
+                        example:
+                          status: "completed"
+                          text: "Hello, thank you for calling our support center."
+                          duration: 42.5
+        "400":
+          description: Cannot create transcription for this file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: "Can't create transcriptions for this file!"
+        "404":
+          description: Transcription not found and no audioUrl provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: "No transcription found and no audioUrl provided to create the transcriptions."
+        "500":
+          description: Internal server error
+
+  /transcription/{fileId}:
+    delete:
+      tags:
+        - Transcription
+      summary: Delete a transcription by file ID
+      description: |
+        Permanently removes the transcription record for the specified audio file from the system.
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          description: Unique identifier of the transcription or audio file to delete.
+          schema:
+            type: string
+            example: "670fcae25abf2d8e5c8a4a12"
+
+      responses:
+        "200":
+          description: Transcription successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully deleted the transcription"
+                  data:
+                    type: object
+                    example: {}
+        "404":
+          description: Transcription not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: "This transcription does not exist anymore in the system."
+        "500":
+          description: Internal server error
+
+tags:
+  - name: Auth
+    description: Authentication and session management endpoints (OAuth and session validation)
+  - name: Users
+    description: Operations for managing user records
+  - name: Departments
+    description: Operations for managing departments
+  - name: Email Meter
+    description: APIs to get Email Meter Stats
+  - name: HubSpot Tickets
+    description: Feedback APIs
+  - name: Permissions
+    description: Permissions APIs
+  - name: Transcription
+    description: Transcription APIs

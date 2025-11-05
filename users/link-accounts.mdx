@@ -1,0 +1,132 @@
+---
+title: 'Link User Accounts'
+openapi: 'POST /user/link-accounts'
+---
+
+Admin-only endpoint to link a secondary user account into a primary account. The `userToLinkId` account will be deleted after merging its linked accounts into the primary `userId`.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "payload": {
+    "userId": "64b7f1a2e4b0a5d3f9c12345",
+    "userToLinkId": "64b7f2b3e4b0a5d3f9c54321"
+  }
+}
+```
+
+### Request Body Schema
+
+| Field            | Type   | Required | Description                              |
+|------------------|--------|----------|------------------------------------------|
+| payload          | object | Yes      | Link accounts payload                   |
+| payload.userId   | string | Yes      | Primary user ID (will keep the account)  |
+| payload.userToLinkId | string | Yes      | Secondary user ID (will be deleted)      |
+
+## Response
+
+### 200 OK - Successfully linked accounts
+
+```json
+{
+  "message": "Accounts linked successfully",
+  "data": {
+    "updatedPrimaryUser": {
+      "_id": "64b7f1a2e4b0a5d3f9c12345",
+      "emails": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "user",
+      "linkedAccounts": [
+        {
+          "provider": "google",
+          "providerId": "123456789"
+        },
+        {
+          "provider": "microsoft",
+          "providerId": "987654321"
+        }
+      ]
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X POST 'http://localhost:2000/user/link-accounts' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payload": {
+      "userId": "64b7f1a2e4b0a5d3f9c12345",
+      "userToLinkId": "64b7f2b3e4b0a5d3f9c54321"
+    }
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Both user IDs must be valid MongoDB ObjectIds
+- The secondary account (`userToLinkId`) will be permanently deleted
+- All linked accounts from the secondary user are merged into the primary
+- This action is irreversible - the secondary account cannot be restored
+- Use this to consolidate duplicate user accounts
+- The primary user retains their original ID and all merged linked accounts
+- Permissions and department assignments from the secondary account are lost

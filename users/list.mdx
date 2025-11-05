@@ -1,0 +1,117 @@
+---
+title: 'List Users'
+openapi: 'GET /user/list/{start}/{end}'
+---
+
+Admin-only endpoint to retrieve a list of users with pagination support.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type    | Required | Description                              |
+|-----------|---------|----------|------------------------------------------|
+| start     | integer | Yes      | Starting index (0 for beginning)         |
+| end       | integer | Yes      | Ending index (0 to return all users)     |
+
+### Query Parameters
+
+| Parameter         | Type    | Required | Description                              |
+|-------------------|---------|----------|------------------------------------------|
+| departmentFilter  | string  | No       | Department ID to filter users by         |
+
+#### departmentFilter Details
+- Must be a valid MongoDB ObjectId of a department
+- Can be `null` to return all users that are not part of any department
+- Example: `"64ef3c29f9a1c27e1b2c3a4d"`
+
+## Response
+
+### 200 OK - Successfully retrieved user list
+
+```json
+{
+  "message": "Users retrieved successfully",
+  "data": {
+    "total": 25,
+    "users": [
+      {
+        "_id": "64b7f1a2e4b0a5d3f9c12345",
+        "emails": "user@example.com",
+        "firstName": "John",
+        "lastName": "Doe",
+        "role": "user",
+        "department": {
+          "_id": "64b7f2b3e4b0a5d3f9c54321",
+          "name": "Customer Support"
+        },
+        "rcExtension": "1234",
+        "phone": "+1-555-555-5555"
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get first 10 users
+```bash
+curl -X GET 'http://localhost:2000/user/list/0/10' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get all users
+```bash
+curl -X GET 'http://localhost:2000/user/list/0/0' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get users from specific department
+```bash
+curl -X GET 'http://localhost:2000/user/list/0/10?departmentFilter=64ef3c29f9a1c27e1b2c3a4d' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get users without department
+```bash
+curl -X GET 'http://localhost:2000/user/list/0/10?departmentFilter=null' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Pagination is zero-based (start at 0)
+- Setting both start and end to 0 returns all users
+- The response includes a total count for pagination controls
+- Users are returned with summary information, not full profile data
+- Use departmentFilter to narrow down results by department

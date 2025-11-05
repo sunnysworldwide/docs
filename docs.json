@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "COMPASS API Documentation",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -11,77 +11,94 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Overview",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Introduction",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "overview/introduction",
+              "overview/authentication"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Authentication",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "OAuth Sign-in",
             "pages": [
-              "api-reference/introduction"
+              "auth/signin-google",
+              "auth/signin-microsoft"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Session Management",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "auth/validate-session",
+              "auth/logout"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Users",
+        "groups": [
+          {
+            "group": "Profile Management",
+            "pages": [
+              "users/profile",
+              "users/update-rcextension",
+              "users/update-phone",
+              "users/update-department",
+              "users/update-department-role"
+            ]
+          },
+          {
+            "group": "User Administration",
+            "pages": [
+              "users/list",
+              "users/link-accounts",
+              "users/match-suggestions"
+            ]
+          },
+          {
+            "group": "Permissions",
+            "pages": [
+              "users/add-permissions",
+              "users/remove-permissions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Departments",
+        "groups": [
+          {
+            "group": "Department Information",
+            "pages": [
+              "departments/list",
+              "departments/hierarchy"
+            ]
+          },
+          {
+            "group": "Department Management",
+            "pages": [
+              "departments/new",
+              "departments/update",
+              "departments/delete"
+            ]
+          },
+          {
+            "group": "User Management",
+            "pages": [
+              "departments/add-users",
+              "departments/assign-manager"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -91,32 +108,20 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "https://support.example.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/your-org/compass-api",
+      "website": "https://support.example.com/contact"
     }
   }
 }

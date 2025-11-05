@@ -1,0 +1,155 @@
+---
+title: 'Remove User Permissions'
+openapi: 'PUT /user/remove-permissions'
+---
+
+Removes one or more permissions from a user's existing permissions list. Only admin-level users can perform this action.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "payload": {
+    "userId": "68bb46bb4db8c853599f1ebb",
+    "permissions": [
+      "compass.dashboard.*",
+      "compass.dashboard.overview"
+    ]
+  }
+}
+```
+
+### Request Body Schema
+
+| Field                     | Type     | Required | Description                              |
+|---------------------------|----------|----------|------------------------------------------|
+| payload                   | object   | Yes      | Remove permissions payload              |
+| payload.userId            | string   | Yes      | The ID of the user to update             |
+| payload.permissions       | array    | Yes      | List of permissions to remove            |
+
+#### Permission Format
+Permissions follow the pattern: `compass.module.action`
+- Use `*` as wildcard (e.g., `compass.dashboard.*`)
+- Specific actions (e.g., `compass.dashboard.overview`)
+- Module-level access (e.g., `compass.emailmeter`)
+
+## Response
+
+### 200 OK - Successfully removed permissions
+
+```json
+{
+  "message": "Successfully removed permissions for this user.",
+  "data": {}
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid payload or missing required fields"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid authentication token"
+  }
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User with this ID does not exist anymore"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/user/remove-permissions' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payload": {
+      "userId": "68bb46bb4db8c853599f1ebb",
+      "permissions": [
+        "compass.dashboard.*",
+        "compass.dashboard.overview",
+        "compass.emailmeter.stats"
+      ]
+    }
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Permissions are removed from the user's existing permissions
+- Non-existent permissions are automatically ignored
+- The user ID must be a valid MongoDB ObjectId
+- Permission strings must match exactly to be removed
+- Changes take effect immediately for the user's next request
+- Use the `/user/add-permissions` endpoint to add permissions
+- Permission changes are logged for audit purposes
+- Removing all permissions may restrict user access to the system
+
+## Important Considerations
+
+- **Wildcard Permissions**: Removing `compass.dashboard.*` removes all dashboard permissions
+- **Specific Permissions**: Must match exactly (case-sensitive)
+- **Minimum Permissions**: Ensure users retain necessary permissions for their role
+- **Audit Trail**: All permission changes are tracked
+- **Immediate Effect**: Changes apply on the user's next authenticated request
+
+## Best Practices
+
+1. Review user's current permissions before removal
+2. Test permission changes in a non-production environment
+3. Document permission changes for compliance
+4. Consider using role-based permissions instead of individual management
+5. Regularly audit user permissions for security

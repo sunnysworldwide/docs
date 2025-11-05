@@ -1,0 +1,166 @@
+---
+title: 'Add Users to Department'
+openapi: 'PUT /department/add-users/{departmentId}'
+---
+
+Admin-only endpoint to add multiple users to a department with a specific role.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Path Parameters
+
+| Parameter     | Type   | Required | Description              |
+|---------------|--------|----------|--------------------------|
+| departmentId  | string | Yes      | Department ID to add users to |
+
+### Request Body
+
+```json
+{
+  "userIds": [
+    "64b7f1a2e4b0a5d3f9c12345",
+    "64b7f2b3e4b0a5d3f9c54321",
+    "64b7f3c4e4b0a5d3f9c98765"
+  ],
+  "role": "agent"
+}
+```
+
+### Request Body Schema
+
+| Field   | Type     | Required | Description                              |
+|---------|----------|----------|------------------------------------------|
+| userIds | array    | Yes      | List of user IDs to add to department    |
+| role    | string   | Yes      | Role to assign to users in department    |
+
+#### Field Details
+- **userIds**: Array of valid MongoDB ObjectIds
+- **role**: Department role (e.g., "manager", "supervisor", "agent", "admin")
+
+## Response
+
+### 200 OK - Successfully added users to department
+
+```json
+{
+  "message": "Successfully added users to Engineering department",
+  "data": {
+    "addedUsers": [
+      {
+        "userId": "64b7f1a2e4b0a5d3f9c12345",
+        "name": "John Doe",
+        "role": "agent"
+      },
+      {
+        "userId": "64b7f2b3e4b0a5d3f9c54321",
+        "name": "Jane Smith",
+        "role": "agent"
+      }
+    ],
+    "departmentId": "64ef3c29f9a1c27e1b2c3a4d"
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Department not found or invalid user IDs"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X PUT 'http://localhost:2000/department/add-users/64ef3c29f9a1c27e1b2c3a4d' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "userIds": [
+      "64b7f1a2e4b0a5d3f9c12345",
+      "64b7f2b3e4b0a5d3f9c54321"
+    ],
+    "role": "agent"
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Department ID must be a valid MongoDB ObjectId
+- All user IDs must be valid MongoDB ObjectIds
+- Users can only be added to one department at a time
+- If users are already in a department, they will be moved
+- The role applies to all users being added
+- Users receive department-based permissions based on their role
+
+## Role Definitions
+
+| Role       | Description                              | Permissions |
+|------------|------------------------------------------|-------------|
+| manager    | Department manager                      | Full department access |
+| supervisor | Team supervisor                          | Team management access |
+| agent      | Regular department member                | Standard department access |
+| admin      | Department administrator                 | Administrative access |
+
+## Use Cases
+
+- **Onboarding**: Add new employees to their department
+- **Team Transfers**: Move users between departments
+- **Bulk Assignment**: Add multiple users efficiently
+- **Role Changes**: Assign specific roles to new members
+
+## Best Practices
+
+1. **Verify Users**: Ensure all user IDs exist before adding
+2. **Role Assignment**: Choose appropriate roles for users
+3. **Communication**: Notify users of department changes
+4. **Permissions**: Review role permissions before assignment
+5. **Audit**: Track department membership changes
+
+## Error Handling
+
+- **Invalid User IDs**: Users that don't exist are skipped
+- **Already Assigned**: Users are moved from current department
+- **Invalid Role**: Returns validation error
+- **Department Not Found**: Returns 404 error
+
+## Impact on Users
+
+- Users gain access to department resources
+- Previous department assignments are replaced
+- Role-based permissions are applied immediately
+- Users may see new teams and projects in their dashboard

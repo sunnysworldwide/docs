@@ -1,0 +1,105 @@
+---
+title: 'List Departments'
+openapi: 'GET /department/list/{start}/{end}'
+---
+
+Admin-only endpoint to retrieve a list of departments with pagination support.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type    | Required | Description                              |
+|-----------|---------|----------|------------------------------------------|
+| start     | integer | Yes      | Starting index (0 for beginning)         |
+| end       | integer | Yes      | Ending index (0 to return all departments) |
+
+## Response
+
+### 200 OK - Successfully retrieved department list
+
+```json
+{
+  "message": "Departments retrieved successfully",
+  "data": {
+    "total": 15,
+    "departments": [
+      {
+        "_id": "64b7f2b3e4b0a5d3f9c54321",
+        "name": "Customer Support",
+        "description": "Handles customer inquiries and support tickets",
+        "parentId": null,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      },
+      {
+        "_id": "64b7f3c4e4b0a5d3f9c98765",
+        "name": "Engineering",
+        "description": "Software development and technical operations",
+        "parentId": null,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get first 10 departments
+```bash
+curl -X GET 'http://localhost:2000/department/list/0/10' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get all departments
+```bash
+curl -X GET 'http://localhost:2000/department/list/0/0' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+### Get departments 11-20
+```bash
+curl -X GET 'http://localhost:2000/department/list/10/20' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Pagination is zero-based (start at 0)
+- Setting both start and end to 0 returns all departments
+- The response includes a total count for pagination controls
+- Departments are returned as a flat list without hierarchy
+- Use the `/department/hierarchy` endpoint for hierarchical view
+- Departments are sorted by creation date (newest first)
+- The list includes both parent and child departments

@@ -1,0 +1,96 @@
+---
+title: 'Validate Session'
+openapi: 'POST /auth/validate-session'
+---
+
+Validate an existing session token and return the user object. Protected route that returns the user object from the request body when the session is valid. Requires authentication and appropriate role middleware.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Request Body
+
+```json
+{
+  "user": {
+    "_id": "64b7f1a2e4b0a5d3f9c12345",
+    "emails": "user@example.com",
+    "role": "user"
+  }
+}
+```
+
+### Request Body Schema
+
+| Field | Type   | Required | Description          |
+|-------|--------|----------|----------------------|
+| user  | object | Yes      | User object to validate |
+
+## Response
+
+### 200 OK - Session valid
+
+Returns the user object.
+
+```json
+{
+  "data": {
+    "user": {
+      "_id": "64b7f1a2e4b0a5d3f9c12345",
+      "emails": "user@example.com",
+      "role": "user"
+    }
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or expired session token"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X POST 'http://localhost:2000/auth/validate-session' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user": {
+      "_id": "64b7f1a2e4b0a5d3f9c12345",
+      "emails": "user@example.com",
+      "role": "user"
+    }
+  }'
+```
+
+## Notes
+
+- This endpoint requires a valid JWT token in the Authorization header
+- The request body should contain the user object you want to validate
+- This is useful for checking if a session is still active and valid
+- The endpoint validates both the token and the user object in the request body
+- Use this to implement session refresh logic in your application

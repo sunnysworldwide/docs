@@ -1,0 +1,130 @@
+---
+title: 'Get Department Hierarchy'
+openapi: 'GET /department/hierarchy'
+---
+
+Admin-only endpoint that retrieves the full hierarchical structure of all departments. Each department may include nested child departments inside the `children` array.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+## Response
+
+### 200 OK - Successfully retrieved department hierarchy
+
+```json
+{
+  "message": "Department hierarchy retrieved successfully",
+  "data": {
+    "departments": [
+      {
+        "_id": "64b7f2b3e4b0a5d3f9c54321",
+        "name": "Customer Support",
+        "description": "Handles customer inquiries and support tickets",
+        "parentId": null,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z",
+        "children": [
+          {
+            "_id": "64b7f3c4e4b0a5d3f9c98765",
+            "name": "Tier 1 Support",
+            "description": "First level customer support",
+            "parentId": "64b7f2b3e4b0a5d3f9c54321",
+            "createdAt": "2024-01-15T10:30:00.000Z",
+            "updatedAt": "2024-01-15T10:30:00.000Z",
+            "children": [
+              {
+                "_id": "64b7f4d5e4b0a5d3f9c11111",
+                "name": "Email Support",
+                "description": "Email-based customer support",
+                "parentId": "64b7f3c4e4b0a5d3f9c98765",
+                "createdAt": "2024-01-15T10:30:00.000Z",
+                "updatedAt": "2024-01-15T10:30:00.000Z",
+                "children": []
+              }
+            ]
+          },
+          {
+            "_id": "64b7f5e6e4b0a5d3f9c22222",
+            "name": "Tier 2 Support",
+            "description": "Second level escalated support",
+            "parentId": "64b7f2b3e4b0a5d3f9c54321",
+            "createdAt": "2024-01-15T10:30:00.000Z",
+            "updatedAt": "2024-01-15T10:30:00.000Z",
+            "children": []
+          }
+        ]
+      },
+      {
+        "_id": "64b7f6f7e4b0a5d3f9c33333",
+        "name": "Engineering",
+        "description": "Software development and technical operations",
+        "parentId": null,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z",
+        "children": []
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X GET 'http://localhost:2000/department/hierarchy' \
+  -H 'Authorization: Bearer your-jwt-token'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Returns departments in a hierarchical tree structure
+- Root departments have `parentId: null`
+- Child departments are nested in the `children` array
+- The hierarchy can have multiple levels of nesting
+- Use this for organizational charts or department trees
+- Departments are sorted alphabetically within each level
+- Empty `children` arrays indicate leaf departments (no sub-departments)
+
+## Use Cases
+
+- **Organizational Charts**: Display company structure
+- **Department Selection**: Create hierarchical dropdown menus
+- **Reporting Structure**: Show management hierarchy
+- **Access Control**: Implement department-based permissions
+- **Analytics**: Analyze departmental data with hierarchy context
+
+## Performance Considerations
+
+- Large organizational hierarchies may take longer to load
+- Consider caching the hierarchy for frequently accessed data
+- The endpoint returns the complete hierarchy in a single request
+- For very large organizations, consider using the list endpoint with pagination

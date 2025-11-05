@@ -1,0 +1,175 @@
+---
+title: 'Update Department'
+openapi: 'PUT /department/update/{departmentId}'
+---
+
+Admin-only endpoint to update department details.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Path Parameters
+
+| Parameter     | Type   | Required | Description              |
+|---------------|--------|----------|--------------------------|
+| departmentId  | string | Yes      | Department ID to update  |
+
+### Request Body
+
+```json
+{
+  "name": "Customer Success",
+  "description": "Dedicated to ensuring customer satisfaction and retention",
+  "parentId": "64b7f2b3e4b0a5d3f9c54321"
+}
+```
+
+### Request Body Schema
+
+| Field        | Type   | Required | Description                              |
+|--------------|--------|----------|------------------------------------------|
+| name         | string | No       | New department name                      |
+| description  | string | No       | New department description               |
+| parentId     | string | No       | New parent department ID                  |
+
+#### Field Details
+- **name**: Must be unique if changed
+- **description**: Update the department description
+- **parentId**: Can be changed to reorganize hierarchy
+- **parentId**: Use `null` to make it a root-level department
+
+## Response
+
+### 200 OK - Successfully updated department
+
+```json
+{
+  "message": "Successfully updated Engineering department",
+  "data": {
+    "department": {
+      "_id": "64b7f2b3e4b0a5d3f9c54321",
+      "name": "Customer Success",
+      "description": "Dedicated to ensuring customer satisfaction and retention",
+      "parentId": "64b7f2b3e4b0a5d3f9c54321",
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-16T14:25:00.000Z"
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Department name already exists"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid token or insufficient permissions"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "DEPARTMENT_NOT_FOUND",
+    "message": "Department not found"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Update department name and description
+```bash
+curl -X PUT 'http://localhost:2000/department/update/64b7f2b3e4b0a5d3f9c54321' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Customer Success",
+    "description": "Dedicated to ensuring customer satisfaction and retention"
+  }'
+```
+
+### Move department to new parent
+```bash
+curl -X PUT 'http://localhost:2000/department/update/64b7f3c4e4b0a5d3f9c98765' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "parentId": "64b7f7g8h9i0j1k2l3m4n5o"
+  }'
+```
+
+### Make department root-level
+```bash
+curl -X PUT 'http://localhost:2000/department/update/64b7f3c4e4b0a5d3f9c98765' \
+  -H 'Authorization: Bearer your-jwt-token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "parentId": null
+  }'
+```
+
+## Notes
+
+- This is an admin-only endpoint - requires administrative privileges
+- Department ID must be a valid MongoDB ObjectId
+- Department names must remain unique after update
+- Cannot set a department as its own parent (prevents circular references)
+- Cannot set a child department as parent (prevents circular hierarchy)
+- Moving a department also moves all its sub-departments
+- The `updatedAt` timestamp is automatically updated
+- Users assigned to the department are not affected by name changes
+
+## Hierarchy Considerations
+
+- **Moving Departments**: All child departments move with the parent
+- **Circular Prevention**: System prevents creating circular references
+- **Parent Validation**: New parent must exist (unless setting to null)
+- **Depth Limits**: Consider reasonable hierarchy depth limits
+
+## Impact on Users
+
+- User department assignments remain valid
+- Department-based permissions are preserved
+- User profiles will show updated department names
+- No disruption to user access or functionality
+
+## Best Practices
+
+1. **Plan Changes**: Consider impact on hierarchy before updating
+2. **Communicate**: Notify users of department name changes
+3. **Test**: Test hierarchy changes in non-production first
+4. **Backup**: Document current structure before major changes
+5. **Review**: Regularly review department structure for optimization
