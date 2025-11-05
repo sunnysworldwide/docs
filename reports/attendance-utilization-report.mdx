@@ -1,0 +1,209 @@
+---
+title: 'Attendance & Utilization Report'
+description: 'Technical documentation for the Attendance & Utilization reporting system including configuration, calculations, and examples.'
+---
+
+The Attendance & Utilization Report provides daily analysis of agent performance metrics including shift completion, attendance tracking, and department-level utilization statistics. It processes Resource Inn data to identify performance issues, filter out management roles, and generate HTML email reports for operations teams.
+
+## Files & Location
+
+- **`ri-extended-daily-report.js`** — Core data processing script that parses raw Resource Inn data, calculates expected hours, floor time, shift completion percentages, and sets attendance flags (absent/on-time/late).
+
+- **`ri-attendance-report.js`** — Email report generator that applies performance filters, excludes management roles using keyword matching, and produces the final HTML report sent to stakeholders.
+
+- **`management-keywords.json`** — Configuration file containing list of keywords used to identify management roles that should be excluded from performance calculations.
+
+- **`code-to-department.json`** — Mapping configuration that converts department codes to human-readable department names used in filtering and reporting.
+
+- **`fetch-ri-extended-daily-report.js`** — Data fetcher that retrieves Resource Inn Excel/CSV reports and prepares them for processing (if present in your deployment).
+
+## Data sources
+
+Raw attendance data comes from Resource Inn daily reports exported as Excel/CSV files. The `fetch-ri-extended-daily-report.js` script retrieves these files and passes them to `ri-extended-daily-report.js` for preprocessing. Pre-processing includes:
+
+- Time format normalization (converting various time formats to minutes)
+- Department code resolution using `code-to-department.json`
+- Expected hours calculation based on shift schedules
+- Break time extraction and validation
+
+## Field definitions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` / `employeeId` | string | Unique employee identifier from Resource Inn |
+| `name` | string | Employee full name |
+| `designation` | string | Job title/role used for management filtering |
+| `department` | string | Department name (resolved from code) |
+| `expectedHours` | number | Hours expected for the shift based on schedule |
+| `totalTimeOnFloorHours` | number | Actual hours spent on floor during shift |
+| `breakMinutes` | number | Total break time taken in minutes |
+| `shiftCompletionPercentage` | number | Percentage of expected hours completed (0-100) |
+| `checkInStatus` | string | Attendance status: 'Present', 'Day Off', 'Absent' |
+| `isAbsent` | boolean | True if employee was marked absent |
+| `isOnTime` | boolean | True if employee checked in on time |
+| `isLate` | boolean | True if employee checked in late |
+
+## Calculations & formulas
+
+### Core performance metrics
+
+```javascript
+// Shift completion percentage
+shiftCompletionPercentage = (totalTimeOnFloorHours / expectedHours) * 100
+
+// Low performance flag (less than 75% completion)
+isLowPerformance = totalTimeOnFloorHours < (expectedHours * 0.75)
+
+// Excessive break flag (more than 65 minutes)
+hasExcessiveBreak = breakMinutes > 65
+```
+
+### Department-level calculations
+
+```javascript
+// Department utilization (average of non-management agents)
+departmentUtilization = average(
+  records
+    .filter(r => !isManagement(r.designation))
+    .map(r => r.shiftCompletionPercentage)
+)
+
+// Attendance counts
+presentCount = records.filter(r => !r.isAbsent).length
+absentCount = records.filter(r => r.isAbsent).length
+lateCount = records.filter(r => r.isLate).length
+```
+
+## Management filtering
+
+Management roles are excluded from performance calculations using keyword matching:
+
+1. **Keyword loading**: `ri-attendance-report.js` loads keywords using:
+   ```javascript
+   const managementKeywords = JSON.parse(
+     fs.readFileSync('management-keywords.json', 'utf8')
+   );
+   ```
+
+2. **Matching behavior**: Case-insensitive substring match against `record.designation`:
+   ```javascript
+   const isManagement = (designation) => 
+     managementKeywords.some(keyword => 
+       designation.toLowerCase().includes(keyword.toLowerCase())
+     );
+   ```
+
+3. **Configuration**: Add or modify keywords in `management-keywords.json`. Common entries include "Manager", "Lead", "Supervisor", "Director".
+
+## Edge cases & notes
+
+- **Zero expected hours**: Records with `expectedHours` of 0 or null are excluded from calculations to avoid division by zero and skewed averages.
+
+- **Missing/malformed times**: Invalid time formats are marked as absent and excluded from performance metrics. The `parseTimeToMinutes` function handles various formats but logs errors for unparseable values.
+
+- **Designation ambiguity**: Roles like "Lead" or "Team Lead" may be unintentionally excluded. Modify `management-keywords.json` to include or remove specific keywords based on your organizational structure.
+
+- **Part-time shifts**: Fractional `expectedHours` values are supported. The 75% threshold applies proportionally (e.g., 4-hour shift requires 3+ hours to pass).
+
+- **Department name variations**: Multiple department codes can map to the same name in `code-to-department.json`. Ensure all relevant codes are included for accurate filtering.
+
+- **Time format variations**: The parser handles formats like "06:00 pm", "18:00", "6:00 PM". Unrecognized formats default to 0 and trigger absent flags.
+
+## Worked example
+
+### Input records
+
+| Employee | Expected Hours | Floor Hours | Break Minutes | Designation |
+|----------|----------------|-------------|---------------|-------------|
+| Alice | 8.0 | 6.0 | 45 | Agent |
+| Bob | 8.0 | 5.5 | 30 | Agent |
+| Carol | 8.0 | 7.0 | 70 | Team Lead |
+
+### Calculations
+
+```javascript
+// Alice: 6.0 / 8.0 * 100 = 75.0% → not flagged (>= 75%)
+// Bob: 5.5 / 8.0 * 100 = 68.75% → flagged as low performance
+// Carol: 7.0 / 8.0 * 100 = 87.5% → flagged for excessive break (70 > 65)
+// Carol excluded from department average due to "Lead" keyword
+```
+
+### Output summary
+
+- **Department utilization**: (75.0% + 68.75%) / 2 = 71.88%
+- **Present count**: 3 (all marked present)
+- **Low performance**: 1 agent (Bob)
+- **Excessive breaks**: 1 agent (Carol)
+- **Management excluded**: 1 record (Carol)
+
+## How to change thresholds & configuration
+
+### Low performance threshold
+Edit `ri-attendance-report.js` and search for the `0.75` value or comment referencing "25% less":
+```javascript
+// Change from 0.75 to 0.80 for 80% threshold
+isLowPerformance = totalTimeOnFloorHours < (expectedHours * 0.80);
+```
+
+### Break time limit
+In the same file, find the break minutes comparison:
+```javascript
+// Change from 65 to desired limit
+hasExcessiveBreak = breakMinutes > 60; // 60 minutes instead of 65
+```
+
+### Include management in reports
+To include management roles in calculations:
+1. Delete or rename `management-keywords.json`
+2. Or modify `ri-attendance-report.js` to skip the filtering step:
+   ```javascript
+   // Comment out or remove this line
+   const filteredRecords = records.filter(r => !isManagement(r.designation));
+   const filteredRecords = records; // Use all records instead
+   ```
+
+## Testing suggestions
+
+### Unit tests to implement
+
+```bash
+# Test shift completion calculation
+node -e "
+const { calculateShiftCompletion } = require('./ri-extended-daily-report.js');
+console.log(calculateShiftCompletion(6, 8)); // Should return 75
+console.log(calculateShiftCompletion(5.5, 8)); // Should return 68.75
+"
+
+# Test management filtering
+node -e "
+const { isManagement } = require('./ri-attendance-report.js');
+console.log(isManagement('Team Lead')); // Should return true
+console.log(isManagement('Agent')); // Should return false
+"
+
+# Test department mapping
+node -e "
+const { getDepartmentName } = require('./ri-extended-daily-report.js');
+console.log(getDepartmentName('OPS')); // Should return 'Operations'
+"
+```
+
+### Integration testing
+
+Run the full processing pipeline in your project root:
+```bash
+# Test complete report generation
+node ri-extended-daily-report.js && node ri-attendance-report.js
+
+# Test with sample data
+node scripts/test-ri-extended-daily-report.js
+```
+
+## References
+
+- **Core processing**: `ri-extended-daily-report.js` - `parseTimeToMinutes()`, `calculateShiftCompletion()`, `getDepartmentNames()`
+- **Report generation**: `ri-attendance-report.js` - `isManagement()`, `generateHTMLReport()`
+- **Configuration files**: `management-keywords.json`, `code-to-department.json`
+- **Data fetching**: `fetch-ri-extended-daily-report.js` (if deployed)
+
+For detailed implementation, inspect the referenced functions and configuration files in your project repository.

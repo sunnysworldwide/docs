@@ -22,6 +22,12 @@
               "overview/troubleshooting",
               "overview/api-reference"
             ]
+          },
+          {
+            "group": "Reports",
+            "pages": [
+              "reports/attendance-utilization-report"
+            ]
           }
         ]
       },
