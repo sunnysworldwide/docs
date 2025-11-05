@@ -1,0 +1,657 @@
+---
+title: 'Troubleshooting Guide'
+description: 'Common issues and solutions when working with COMPASS API. Get help with authentication, errors, and integration problems.'
+---
+
+# Troubleshooting Guide
+
+This guide covers common issues, error scenarios, and solutions when working with the COMPASS API.
+
+## Authentication Issues
+
+### "Invalid token" Error
+
+**Symptoms:**
+- API returns 401 Unauthorized
+- Error message: "Missing or invalid token"
+
+**Common Causes:**
+1. **Token Format Incorrect**
+   ```bash
+   # ❌ Wrong format
+   Authorization: eyJhb...  # Missing "Bearer" prefix
+   
+   # ✅ Correct format
+   Authorization: oBearer eyJhb...
+   ```
+
+2. **Token Expired**
+   ```javascript
+   // Check token expiration
+   function isTokenExpired(token) {
+     try {
+       const payload = JSON.parse(atob(token.split('.')[1]));
+       return Date.now() >= payload.exp * 1000;
+     } catch {
+       return true; // Invalid token
+     }
+   }
+   ```
+
+3. **Token Tampered**
+   - JWT signature validation failed
+   - Token modified after issuance
+
+**Solutions:**
+```javascript
+// Implement token refresh
+async function refreshToken() {
+  try {
+    const response = await fetch('/auth/validate-session', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${oldToken}` },
+      body: JSON.stringify({ token: oldToken })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.data.token; // New token
+    } else {
+      // Redirect to login
+      redirectToLogin();
+    }
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    redirectToLogin();
+  }
+}
+```
+
+### OAuth Provider Issues
+
+**Google OAuth Errors:**
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `invalid_client` | Wrong client ID | Verify Google OAuth configuration |
+| `redirect_uri_mismatch` | Incorrect redirect URI | Update OAuth settings |
+| `access_denied` | User denied consent | Request permission again |
+
+**Microsoft OAuth Errors:**
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `invalid_request` | Missing parameters | Check request format |
+| `unauthorized_client` | App not registered | Verify Azure AD registration |
+| `invalid_scope` | Wrong permissions | Update scope configuration |
+
+## HTTP Error Codes
+
+### 400 Bad Request
+
+**Common Scenarios:**
+
+1. **Invalid JSON Format**
+   ```bash
+   # ❌ Missing quotes
+   {"name": John, "email": "john@example.com"}
+   
+   # ✅ Valid JSON
+   {"name": "John", "email": "john@example.com"}
+   ```
+
+2. **Required Fields Missing**
+   ```json
+   {
+     "error": {
+       "code": "VALIDVALID",
+       "message": "Required field 'name' is missing"
+     }
+   }
+   ```
+
+3. **Invalid Data Types**
+   ```javascript
+   // ❌ Wrong type
+   { "age": "twenty-five" } // String instead of number
+   
+   // ✅ Correct type
+   { "age": 25 } // Number
+   ```
+
+**Debugging Tips:**
+```javascript
+// Validate request before sending
+function validateRequest(data, requiredFields) {
+  const missing = requiredFields.filter(field => !(field in data));
+  if (missing.length > 0) {
+    throw new Error(`Missing required fields: ${missing.join(', ')}`);
+  }
+  return true;
+}
+
+// Usage
+try {
+  validateRequest(userData, ['name', 'email', 'department']);
+  await fetch('/users/create', { method: 'POST', body: JSON.stringify(userData) });
+} catch (error) {
+  console.error('Validation failed:', error.message);
+}
+```
+
+### 403 Forbidden
+
+**Common Causes:**
+
+1. **Insufficient Permissions**
+   ```json
+   {
+     "error": {
+       "code": "INSUFFICIENT_PERMISSIONS",
+       "message": "You do not have permission to access this resource"
+     }
+   }
+   ```
+
+2. **Admin-Only Endpoint**
+   ```bash
+   # ❌ Non-admin trying to access admin endpoint
+   curl -X GET '/permissions/list' -H 'Authorization: oBearer USER_TOKEN'
+   
+   # ✅ Admin token required
+   curl -X GET '/permissions/list' -H 'Authorization: oBearer ADMIN_TOKEN'
+   ```
+
+**Solution:**
+```javascript
+// Check permissions before making requests
+function hasPermission(user, requiredPermission) {
+  return user.permissions.includes('*') || 
+         user.permissions.includes(requiredPermission);
+}
+
+// Usage
+if (hasPermission(currentUser, 'users.manage')) {
+  await api.deleteUser(userId);
+} else {
+  alert('You do not have permission to delete users');
+}
+```
+
+### 404 Not Found
+
+**Common Scenarios:**
+
+1. **Invalid Endpoint URL**
+   ```bash
+   # ❌ Wrong endpoint
+   /user/profile  # Missing 's'
+   
+   # ✅ Correct endpoint
+   /users/profile
+   ```
+
+2. **Resource Not Found**
+   ```json
+   {
+     "error": {
+       "code": "USER_NOT_FOUND",
+       "message": "User with ID 123 does not exist"
+     }
+   }
+   ```
+
+3. **Invalid ID Format**
+   ```javascript
+   // ❌ Invalid ID
+   const userId = 'invalid-id';
+   
+   // ✅ Valid ID format
+   const userId = '64b7; // MongoDB ObjectId
+   ```
+
+### 500 Internal Server Error
+
+**Common Causes:**
+
+1. **Database Connection Issues**
+2. **Service Dependencies Down**
+3. **Unexpected Server Error**
+
+**Debugging Approach:**
+```javascript
+async function makeRequest(url, options = {}) {
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      if (response.status >= 500) {
+        console.error('Server error - retrying...');
+        // Implement retry logic
+        return retryRequest(url, options);
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Request failed:', error);
+    throw error;
+  }
+}
+
+// Exponential backoff retry
+async function retryRequest(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+      const response = await fetch(url, options);
+      
+      if (response.ok) return response.json();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+    }
+  }
+}
+```
+
+## Common Integration Issues
+
+### CORS Errors
+
+**Symptoms:**
+- Browser blocks cross-origin requests
+- Console shows CORS policy errors
+
+**Solutions:**
+1. **Server Configuration**
+   ```javascript
+   // Express.js CORS setup
+   const cors = require('cors');
+   app.use(cors({
+     origin: ['http://localhost:3000', 'https://yourapp.com'],
+     credentials: true
+   }));
+   ```
+
+2. **Client-Side Workaround**
+   ```javascript
+   // Use proxy in development
+   const proxy = require('http-proxy-middleware');
+   module.exports = {
+     devServer: {
+       proxy: {
+         '/api': {
+           target: 'http://localhost:2000',
+           changeOrigin: true
+         }
+       }
+     }
+   };
+   ```
+
+### Rate Limiting
+
+**Symptoms:**
+- HTTP 429 Too Many Requests
+- Requests being throttled
+
+**Solution:**
+```javascript
+class RateLimitedAPI {
+  constructor(baseURL, maxRequests = 1000, windowMs = 360000) {
+    this.baseURL = baseURL;
+    this.requests = [];
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+  }
+
+  async makeRequest(url, options = {}) {
+    await this.checkRateLimit();
+    
+    const response = await fetch(`${this.baseURL}${url}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        ...options.headers
+      }
+    });
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      await new Promise(resolve => setTimeout(resolve, (retryAfter || 60) * 1000));
+      return this.makeRequest(url, options);
+    }
+
+    return response;
+  }
+
+  async checkRateLimit() {
+    const now = Date.now();
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.windowMs - (now - oldestRequest);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    this.requests.push(now);
+  }
+}
+```
+
+### Large Data Handling
+
+**Issues with Large Responses:**
+
+1. **Memory Usage**
+   ```javascript
+   // ❌ Loading large dataset into memory
+   const allData = await fetch('/email-meter/stats/emails-trend/2025-01-01/2025-12-31');
+   
+   // ✅ Stream large responses
+   const response = await fetch('/email-meter/stats/emails-trend/2025-01-01/2025-12-31');
+   const reader = response.body.getReader();
+   
+   while (true) {
+     const { done, value } = await reader.read();
+     if (done) break;
+     // Process chunk
+   }
+   ```
+
+2. **Pagination for Large Lists**
+   ```javascript
+   async function getAllItems(endpoint, pageSize = 50) {
+     let allItems = [];
+     let startIndex = 0;
+     let hasMore = true;
+     
+     while (hasMore) {
+       const response = await fetch(`${endpoint}/${startIndex}/${startIndex + pageSize}`);
+       const data = await response.json();
+       
+       allItems = [...allItems, ...data.data];
+       hasMore = data.data.length === pageSize;
+       startIndex += pageSize;
+     }
+     
+     return allItems;
+   }
+   ```
+
+## Debugging Tools
+
+### Browser Developer Tools
+
+**Network Tab:**
+- Inspect HTTP requests and responses
+- Check headers and status codes
+- View request/response payloads
+
+**Console Logging:**
+```javascript
+// Add comprehensive logging
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+  console.log('🚀 API Request:', args[0], args[1]);
+  const start = Date.now();
+  
+  try {
+    const response = await originalFetch(...args);
+    const duration = Date.now() - start;
+    console.log(`✅ API Response: ${response.status} (${duration}ms)`);
+    return response;
+  } catch (error) {
+    console.error(`❌ API Error: ${error.message}`);
+    throw error;
+  }
+};
+```
+
+### Postman Collections
+
+**Environment Variables:**
+```json
+{
+  "base_url": "http://localhost:2000",
+  "auth_token": "{{oauth_token}}",
+  "user_id": "64b7"
+}
+```
+
+**Test Scripts:**
+```javascript
+// Postman test script
+pm.test("Status code is 200", function () {
+  pm.response.to.have.status(200);
+});
+
+pm.test("Response has data", function () {
+  pm.expect(pm.response.json()).to.have.property('data');
+});
+
+// Save token to environment
+if (pm.response.code === 200 && pm.response.json().data.token) {
+  pm.environment.set("auth_token", pm.response.json().data.token);
+}
+```
+
+### Command Line Debugging
+
+**curl with Verbose Output:**
+```bash
+# Debug authentication flow
+curl -v -X POST 'http://localhost:2000/auth/signin-google/AUTH' \
+  -H 'Content-Type: application/json' \
+  2> debug.log
+
+# Check response headers
+curl -I -X GET 'http://localhost:2000/users/profile' \
+  -H 'Authorization:Bearer TOKEN'
+```
+
+**jq for JSON Parsing:**
+```bash
+# Extract specific fields
+curl -s -X GET '/users/profile' -H 'Authorization: oBearer...' | \
+  jq '.data | {name, email, department}'
+
+# Filter array results
+curl -s -X GET '/departments/list' -H 'Authorization: oBearer...' | \
+  jq '.data[] | select(.code == "OPS")'
+```
+
+## Performance Issues
+
+### Slow API Responses
+
+**Common Causes:**
+1. **Large Date Ranges**
+   ```bash
+   # ❌ Too large range
+   /email-meter/stats/emails-trend/2020-01-01/2025-12-31
+   
+   # ✅ Reasonable range
+   /email-meter/stats/emails-trend/2025-10-01/2025-10-20
+   ```
+
+2. **Missing Pagination**
+   ```javascript
+   // ❌ Loading all data at once
+   const allUsers = await fetch('/users/list');
+   
+   // ✅ Use pagination
+   const users = await fetch('/users/list/0/50');
+   ```
+
+**Optimization Strategies:**
+```javascript
+// Implement caching
+class CachedAPI {
+  constructor() {
+    this.cache = new Map();
+    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  }
+
+  async get(url) {
+    const cacheKey = url;
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data;
+    }
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    this.cache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+    
+    return data;
+  }
+}
+
+// Debounce search requests
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+const searchUsers = debounce(async (query) => {
+  const results = await fetch(`/users/search?q=${query}`);
+  return results.json();
+}, 300);
+```
+
+## Getting Help
+
+### Debug Information Collection
+
+When reporting issues, include:
+
+1. **Request Details**
+   ```javascript
+   const debugInfo = {
+     url: request.url,
+     method: request.method,
+     headers: request.headers,
+     body: request.body,
+     timestamp: new Date().toISOString(),
+     userAgent: navigator.userAgent
+   };
+   ```
+
+2. **Response Information**
+   ```javascript
+   const responseInfo = {
+     status: response.status,
+     statusText: response.statusText,
+     headers: Object.fromEntries(response.headers.entries()),
+     timestamp: new Date().toISOString()
+   };
+   ```
+
+3. **Environment Details**
+   ```javascript
+   const environment = {
+     browser: navigator.userAgent,
+     token: token ? `${token.substring(0, 20)}...` : 'none',
+     permissions: user?.permissions || [],
+     timestamp: new Date().toISOString()
+   };
+   ```
+
+### Contact Support
+
+**Before contacting support:**
+1. Check this troubleshooting guide
+2. Review API documentation
+3. Test with minimal example
+4. Collect debug information
+
+**Support Channels:**
+- **Email**: support@example.com
+- **Documentation**: This guide
+- **Status Page**: Check system status
+- **GitHub Issues**: Report bugs and feature requests
+
+### Community Resources
+
+- **Developer Forums**: Ask questions and share solutions
+- **Code Examples**: Community-contributed integrations
+- **Best Practices**: Learn from other developers
+- **API Updates**: Stay informed about changes
+
+## Quick Reference
+
+### Error Code Cheat Sheet
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| 400 | Bad Request | Check request format and data |
+| 401 | Unauthorized | Authenticate or refresh token |
+| 403 | Forbidden | Check user permissions |
+| 404 | Not Found | Verify endpoint and resource IDs |
+| 429 | Too Many Requests | Implement rate limiting |
+| 500 | Server Error | Retry with exponential backoff |
+
+### Common Fixes
+
+```javascript
+// 1. Token refresh wrapper
+async function withAuth(apiCall) {
+  try {
+    return await apiCall();
+  } catch (error) {
+    if (error.status === 401) {
+      await refreshToken();
+      return await apiCall();
+    }
+    throw error;
+  }
+}
+
+// 2. Error boundary wrapper
+async function safeApiCall(url, options = {}) {
+  try {
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      ...options
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('API call failed:', error);
+    return { error: error.message };
+  }
+}
+
+// 3. Request validation
+function validateEndpoint(endpoint) {
+  const validEndpoints = [
+    '/auth/signin-google',
+    '/users/profile',
+    '/departments/list',
+    // ... other endpoints
+  ];
+  
+  return validEndpoints.some(valid => endpoint.startsWith(valid));
+}
+```
+
+Still having issues? [Contact our support team](mailto:support@example.com) with your debug information and we'll help you get up and running!

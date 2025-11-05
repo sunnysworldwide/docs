@@ -1,0 +1,510 @@
+---
+title: 'Quick Start Guide'
+description: 'Get up and running with COMPASS API in minutes. Learn the basics with practical examples.'
+---
+
+# Quick Start Guide
+
+Get started with COMPASS API in just a few minutes. This guide will walk you through the essential steps to make your first API calls and understand the core concepts.
+
+## Prerequisites
+
+- **OAuth Provider**: Google or Microsoft account
+- **HTTP Client**: Postman, curl, or any programming language
+- **Base URL**: `http://localhost:2000`
+
+## Step 1: Get Your Authentication Token
+
+### Option A: Using Google OAuth
+
+1. **Get Authorization Code**
+   - Navigate to Google OAuth consent screen
+   - Receive authorization code after user consent
+
+2. **Exchange for JWT Token**
+   ```bash
+   curl -X POST 'http://localhost:2000/auth/signin-google/YOUR_AUTH_CODE' \
+     -H 'Content-Type: application/json'
+   ```
+
+### Option B: Using Microsoft OAuth
+
+1. **Get Authorization Code**
+   - Navigate to Microsoft OAuth consent screen
+   - Receive authorization code after user consent
+
+2. **Exchange for JWT Token**
+   ```bash
+   curl -X POST 'http://localhost:2000/auth/signin-microsoft/YOUR_AUTH_CODE' \
+     -H 'Content-Type: application/json'
+   ```
+
+**Response:**
+```json
+{
+  "message": "Authentication successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64b7f1a2e4b0a5d3f9c12345",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "role": "user",
+      "department": "OPS"
+    }
+  }
+}
+```
+
+## Step 2: Make Your First API Call
+
+Use the token from Step 1 to access protected endpoints:
+
+```bash
+curl -X GET 'http://localhost:2000/users/profile' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+```
+
+**Response:**
+```json
+{
+  "message": "",
+  "data": {
+    "id": "64b7f1a2e4b0a5d3f9c12345",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "profilePicture": "https://lh3.googleusercontent.com/...",
+    "role": "user",
+    "department": "OPS",
+    "rcExtension": "101",
+    "phone": "+1-555-123-4567",
+    "permissions": ["users.view", "tickets.view"]
+  }
+}
+```
+
+## Step 3: Explore Core Features
+
+### Get Available Permissions
+
+```bash
+curl -X GET 'http://localhost:2000/permissions/list' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+### List Departments
+
+```bash
+curl -X GET 'http://localhost:2000/departments/list' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+### Get Email Statistics
+
+```bash
+curl -X GET 'http://localhost:2000/email-meter/stats/email-counts/2025-10-01/2025-10-20' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+## Step 4: Try Advanced Features
+
+### Create a New Department
+
+```bash
+curl -X POST 'http://localhost:2000/departments/new' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Customer Support",
+    "code": "CS",
+    "description": "Handles customer inquiries and support"
+  }'
+```
+
+### Get HubSpot Ticket Filters
+
+```bash
+curl -X GET 'http://localhost:2000/hubspot/tickets/list/filters' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+### Generate Audio Transcription
+
+```bash
+curl -X POST 'http://localhost:2000/transcription/get-transcription/FILE_ID' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "audioUrl": "https://example.com/audio-file.mp3"
+  }'
+```
+
+## Code Examples
+
+### JavaScript/Node.js
+
+```javascript
+const axios = require('axios');
+
+class CompassAPI {
+  constructor(baseURL = 'http://localhost:2000') {
+    this.baseURL = baseURL;
+    this.token = null;
+  }
+
+  async authenticate(provider, authCode) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/auth/signin-${provider}/${authCode}`
+      );
+      
+      this.token = response.data.data.token;
+      this.user = response.data.data.user;
+      
+      // Set default authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Authentication failed:', error.response?.data);
+      throw error;
+    }
+  }
+
+  async getUserProfile() {
+    const response = await axios.get(`${this.baseURL}/users/profile`);
+    return response.data.data;
+  }
+
+  async getDepartments() {
+    const response = await axios.get(`${this.baseURL}/departments/list`);
+    return response.data.data;
+  }
+
+  async getEmailStats(startDate, endDate) {
+    const response = await axios.get(
+      `${this.baseURL}/email-meter/stats/email-counts/${startDate}/${endDate}`
+    );
+    return response.data.data;
+  }
+}
+
+// Usage
+async function quickStart() {
+  const api = new CompassAPI();
+  
+  // Authenticate
+  await api.authenticate('google', 'YOUR_AUTH_CODE');
+  console.log('Authenticated as:', api.user.name);
+  
+  // Get user profile
+  const profile = await api.getUserProfile();
+  console.log('User profile:', profile);
+  
+  // Get departments
+  const departments = await api.getDepartments();
+  console.log('Available departments:', departments);
+  
+  // Get email statistics
+  const emailStats = await api.getEmailStats('2025-10-01', '2025-10-20');
+  console.log('Email statistics:', emailStats);
+}
+
+quickStart().catch(console.error);
+```
+
+### Python
+
+```python
+import requests
+import json
+
+class CompassAPI:
+    def __init__(self, base_url='http://localhost:2000'):
+        self.base_url = base_url
+        self.token = None
+        self.headers = {'Content-Type': 'application/json'}
+    
+    def authenticate(self, provider, auth_code):
+        """Authenticate with OAuth provider"""
+        url = f'{self.base_url}/auth/signin-{provider}/{auth_code}'
+        
+        try:
+            response = requests.post(url, headers=self.headers)
+            response.raise_for_status()
+            
+            data = response.json()
+            self.token = data['data']['token']
+            self.headers['Authorization'] = f'Bearer {self.token}'
+            
+            return data['data']
+        except requests.exceptions.RequestException as e:
+            print(f'Authentication failed: {e}')
+            raise
+    
+    def get_user_profile(self):
+        """Get current user profile"""
+        url = f'{self.base_url}/users/profile'
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()['data']
+    
+    def get_departments(self):
+        """List all departments"""
+        url = f'{self.base_url}/departments/list'
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()['data']
+    
+    def get_email_stats(self, start_date, end_date):
+        """Get email statistics"""
+        url = f'{self.base_url}/email-meter/stats/email-counts/{start_date}/{end_date}'
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()['data']
+
+# Usage
+def quick_start():
+    api = CompassAPI()
+    
+    # Authenticate
+    auth_data = api.authenticate('google', 'YOUR_AUTH_CODE')
+    print(f"Authenticated as: {auth_data['user']['name']}")
+    
+    # Get user profile
+    profile = api.get_user_profile()
+    print(f"User: {profile['name']}, Department: {profile['department']}")
+    
+    # Get departments
+    departments = api.get_departments()
+    print(f"Found {len(departments)} departments")
+    
+    # Get email statistics
+    email_stats = api.get_email_stats('2025-10-01', '2025-10-20')
+    print(f"Total conversations: {email_stats['conversations']['total']}")
+
+if __name__ == '__main__':
+    quick_start()
+```
+
+### React Component
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function CompassDashboard() {
+  const [user, setUser] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [emailStats, setEmailStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
+  useEffect(() => {
+    if (token) {
+      loadDashboard();
+    }
+  }, [token]);
+
+  const loadDashboard = async () => {
+    try {
+      // Get user profile
+      const profileResponse = await fetch('/users/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const profileData = await profileResponse.json();
+      setUser(profileData.data);
+
+      // Get departments
+      const deptResponse = await fetch('/departments/list', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const deptData = await deptResponse.json();
+      setDepartments(deptData.data);
+
+      // Get email statistics
+      const statsResponse = await fetch('/email-meter/stats/email-counts/2025-10-01/2025-10-20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const statsData = await statsResponse.json();
+      setEmailStats(statsData.data);
+
+    } catch (error) {
+      console.error('Failed to load dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div>Loading dashboard...</div>;
+
+  return (
+    <div className="dashboard">
+      <h1>Welcome, {user?.name}!</h1>
+      
+      <div className="user-info">
+        <p><strong>Email:</strong> {user?.email}</p>
+        <p><strong>Department:</strong> {user?.department}</p>
+        <p><strong>Role:</strong> {user?.role}</p>
+      </div>
+
+      <div className="departments">
+        <h2>Departments ({departments.length})</h2>
+        <ul>
+          {departments.map(dept => (
+            <li key={dept.id}>{dept.name} ({dept.code})</li>
+          ))}
+        </ul>
+      </div>
+
+      {emailStats && (
+        <div className="email-stats">
+          <h2>Email Statistics</h2>
+          <p><strong>Total Conversations:</strong> {emailStats.conversations.total}</p>
+          <p><strong>Responded:</strong> {emailStats.conversations.responded}</p>
+          <p><strong>Average Response Time:</strong> {emailStats.responseTimes.average} minutes</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default CompassDashboard;
+```
+
+## Common Use Cases
+
+### 1. User Management Dashboard
+
+```javascript
+async function loadUserDashboard() {
+  const api = new CompassAPI();
+  await api.authenticate('google', authCode);
+  
+  const [users, departments, permissions] = await Promise.all([
+    api.getUsers(),
+    api.getDepartments(),
+    api.getPermissions()
+  ]);
+  
+  return { users, departments, permissions };
+}
+```
+
+### 2. Email Analytics Report
+
+```javascript
+async function generateEmailReport(startDate, endDate) {
+  const api = new CompassAPI();
+  await api.authenticate('google', authCode);
+  
+  const [emailCounts, responseTimes, agentStats] = await Promise.all([
+    api.getEmailCounts(startDate, endDate),
+    api.getResponseTimes(startDate, endDate),
+    api.getAgentStats(startDate, endDate)
+  ]);
+  
+  return {
+    summary: emailCounts,
+    performance: responseTimes,
+    agents: agentStats
+  };
+}
+```
+
+### 3. Ticket Management System
+
+```javascript
+async function loadTicketSystem() {
+  const api = new CompassAPI();
+  await api.authenticate('google', authCode);
+  
+  // Get available filters
+  const filters = await api.getTicketFilters();
+  
+  // Get recent tickets
+  const tickets = await api.getTickets('2025-10-01', '2025-10-20', 0, 50);
+  
+  return { filters, tickets };
+}
+```
+
+## Testing Your Integration
+
+### Using Postman
+
+1. **Import Collection**
+   - Create new collection
+   - Set base URL: `http://localhost:2000`
+   - Add authorization variable: `{{token}}`
+
+2. **Authentication Request**
+   - Method: POST
+   - URL: `/auth/signin-google/{{authCode}}`
+   - Save token to collection variables
+
+3. **Test Request**
+   - Method: GET
+   - URL: `/users/profile`
+   - Headers: `Authorization: Bearer {{token}}`
+
+### Using curl Script
+
+```bash
+#!/bin/bash
+
+# Configuration
+BASE_URL="http://localhost:2000"
+AUTH_CODE="YOUR_AUTH_CODE"
+
+# Authenticate
+echo "Authenticating..."
+AUTH_RESPONSE=$(curl -s -X POST "${BASE_URL}/auth/signin-google/${AUTH_CODE}" \
+  -H "Content-Type: application/json")
+
+TOKEN=$(echo $AUTH_RESPONSE | jq -r '.data.token')
+
+if [ "$TOKEN" = "null" ]; then
+  echo "Authentication failed"
+  exit 1
+fi
+
+echo "Authentication successful!"
+
+# Test API calls
+echo "Getting user profile..."
+curl -s -X GET "${BASE_URL}/users/profile" \
+  -H "Authorization: Bearer ${TOKEN}" | jq .
+
+echo "Getting departments..."
+curl -s -X GET "${BASE_URL}/departments/list" \
+  -H "Authorization: Bearer ${TOKEN}" | jq .
+
+echo "Getting email statistics..."
+curl -s -X GET "${BASE_URL}/email-meter/stats/email-counts/2025-10-01/2025-10-20" \
+  -H "Authorization: Bearer ${TOKEN}" | jq .
+```
+
+## Next Steps
+
+Now that you've completed the quick start:
+
+1. **Explore Full Documentation** - Dive into detailed API references
+2. **Build Your Application** - Start integrating COMPASS features
+3. **Check Permissions** - Understand access control system
+4. **Review Best Practices** - Learn security and performance tips
+
+### Recommended Reading
+
+- [Authentication Guide](/overview/authentication) - Deep dive into security
+- [User Management](/users/profile) - Complete user operations
+- [Email Analytics](/email-meter/stats/email-counts) - Advanced reporting
+- [Error Handling](/overview/troubleshooting) - Common issues and solutions
+
+## Need Help?
+
+- **Documentation**: Browse our comprehensive guides
+- **Examples**: Check out our code samples
+- **Support**: Contact our development team
+- **Community**: Join our developer forums
+
+Ready to build something amazing? Start exploring our [complete API reference](/overview/introduction)!

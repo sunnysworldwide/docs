@@ -14,10 +14,13 @@
         "tab": "Overview",
         "groups": [
           {
-            "group": "Introduction",
+            "group": "Getting Started",
             "pages": [
               "overview/introduction",
-              "overview/authentication"
+              "overview/authentication",
+              "overview/quick-start",
+              "overview/troubleshooting",
+              "overview/api-reference"
             ]
           }
         ]
@@ -26,15 +29,10 @@
         "tab": "Authentication",
         "groups": [
           {
-            "group": "OAuth Sign-in",
+            "group": "OAuth & Sessions",
             "pages": [
               "auth/signin-google",
-              "auth/signin-microsoft"
-            ]
-          },
-          {
-            "group": "Session Management",
-            "pages": [
+              "auth/signin-microsoft",
               "auth/validate-session",
               "auth/logout"
             ]
@@ -152,6 +150,29 @@
               "hubspot-tickets/list",
               "hubspot-tickets/ticket-details",
               "hubspot-tickets/export"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Permissions",
+        "groups": [
+          {
+            "group": "System Permissions",
+            "pages": [
+              "permissions/list"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Transcription",
+        "groups": [
+          {
+            "group": "Audio Transcription",
+            "pages": [
+              "transcription/get-transcription",
+              "transcription/delete"
             ]
           }
         ]

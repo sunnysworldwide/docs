@@ -1,0 +1,389 @@
+---
+title: 'API Reference'
+description: 'Complete reference for all COMPASS API endpoints organized by category and functionality.'
+---
+
+# API Reference
+
+This is a comprehensive reference for all COMPASS API endpoints. Each endpoint includes detailed information about parameters, responses, and usage examples.
+
+## Base URL
+
+```
+http://localhost:2000
+```
+
+## Authentication
+
+All API requests (except OAuth endpoints) require authentication using a JWT token:
+
+```http
+Authorization: Bearer <your-jwt-token>
+```
+
+## Endpoint Categories
+
+### Authentication
+OAuth integration and session management for secure API access.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/signin-google/{code}` | POST | Authenticate with Google OAuth |
+| `/auth/signin-microsoft/{code}` | POST | Authenticate with Microsoft OAuth |
+| `/auth/validate-session` | POST | Validate current JWT session |
+| `/auth/logout` | POST | Logout and invalidate session |
+
+[View Authentication Details →](/overview/authentication)
+
+### User Management
+Complete user lifecycle management including profiles, permissions, and department assignments.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/users/profile` | GET | Get current user profile |
+| `/users/update-rcextension` | POST | Update RingCentral extension |
+| `/users/update-phone` | POST | Update phone number |
+| `/users/update-department` | POST | Update user department |
+| `/users/update-department-role` | POST | Update department role |
+| `/users/list` | GET | List users with pagination |
+| `/users/link-accounts` | POST | Link user accounts |
+| `/users/match-suggestions` | GET | Get account matching suggestions |
+| `/users/add-permissions` | POST | Add user permissions |
+| `/users/remove-permissions` | POST | Remove user permissions |
+
+[View User Management →](/users/profile)
+
+### Departments
+Organizational structure management with hierarchical support and user assignments.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/departments/list` | GET | List all departments |
+| `/departments/hierarchy` | GET | Get department hierarchy |
+| `/departments/new` | POST | Create new department |
+| `/departments/update/{departmentId}` | PUT | Update department |
+| `/departments/delete/{departmentId}` | DELETE | Delete department |
+| `/departments/add-users/{departmentId}` | POST | Add users to department |
+| `/departments/assign-manager/{departmentId}` | POST | Assign department manager |
+
+[View Department Management →](/departments/list)
+
+### Email Meter
+Advanced email analytics and performance metrics for transportation operations.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/email-meter/signin/{code}` | POST | Connect Microsoft account |
+| `/email-meter/reservation-hook` | POST | Microsoft Graph webhook |
+| `/email-meter/stats/email-counts/{startDate}/{endDate}` | GET | Email count statistics |
+| `/email-meter/stats/response-times/{startDate}/{endDate}` | GET | Response time metrics |
+| `/email-meter/stats/emails-trend/{startDate}/{endDate}` | GET | Daily email trends |
+| `/email-meter/stats/agents-highlevel/{startDate}/{endDate}` | GET | Agent performance summary |
+| `/email-meter/stats/agents/{startDate}/{endDate}` | GET | Detailed agent statistics |
+| `/email-meter/stats/resolved-times/{startDate}/{endDate}` | GET | Conversation resolution times |
+| `/email-meter/stats/flags/{startDate}/{endDate}` | GET | Flagged conversation stats |
+| `/email-meter/stats/hourly-trends/{startDate}/{endDate}` | GET | Hourly email traffic trends |
+| `/email-meter/stats/clients/top-10/{startDate}/{endDate}` | GET | Top client domains |
+| `/email-meter/stats/clients/lowest-resolved/{startDate}/{endDate}` | GET | Clients with lowest resolution |
+| `/email-meter/stats/clients/incoming-emails-trend/{startDate}/{endDate}` | GET | Client domain trends |
+| `/email-meter/stats/clients/longest-response-times/{startDate}/{endDate}` | GET | Client response times |
+
+[View Email Analytics →](/email-meter/stats/email-counts)
+
+### HubSpot Tickets
+Customer support ticket management with advanced filtering and export capabilities.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/hubspot/tickets/list/filters` | GET | Get available ticket filters |
+| `/hubspot/tickets/list/{startDate}/{endDate}/{startIndex}/{endIndex}` | GET | List tickets with pagination |
+| `/hubspot/ticket-details/{ticketId}` | GET | Get ticket details |
+| `/hubspot/tickets/list/export` | POST | Export tickets data |
+
+[View Ticket Management →](/hubspot-tickets/list-filters)
+
+### Permissions
+System-wide permission management for role-based access control.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/permissions/list` | GET | List all system permissions |
+
+[View Permissions →](/permissions/list)
+
+### Transcription
+Audio-to-text conversion services with confidence scoring and management.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/transcription/get-transcription/{fileId}` | POST | Get or generate transcription |
+| `/transcription/{fileId}` | DELETE | Delete transcription |
+
+[View Transcription →](/transcription/get-transcription)
+
+## Response Format
+
+### Success Response
+
+All successful responses follow this format:
+
+```json
+{
+  "message": "Success message",
+  "data": {
+    // Response data here
+  }
+}
+```
+
+### Error Response
+
+Error responses use this format:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message"
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Code | Category | Description |
+|------|----------|-------------|
+| 200 | Success | Request completed successfully |
+| 400 | Client Error | Bad request or invalid data |
+| 401 | Authentication | Missing or invalid token |
+| 403 | Authorization | Insufficient permissions |
+| 404 | Client Error | Resource not found |
+| 500 | Server Error | Internal server error |
+
+## Common Parameters
+
+### Date Parameters
+Most endpoints use ISO 8601 date format:
+
+```bash
+# Date format: YYYY-MM-DD
+/email-meter/stats/email-counts/2025-10-01/2025-10-20
+
+# DateTime format: YYYY-MM-DDTHH:mm:ss.sssZ
+/email-meter/signin/2025-10-01T10:30:00.000Z
+```
+
+### Pagination Parameters
+List endpoints support pagination:
+
+```bash
+# startIndex: Zero-based index
+# endIndex: Ending index (max 50 items)
+/users/list/0/50    # First 50 users
+/users/list/50/100  # Next 50 users
+```
+
+### Query Parameters
+Filter and search parameters:
+
+```bash
+# Filter by department
+/users/list?department=OPS
+
+# Search functionality
+/hubspot/tickets/list/2025-10-01/2025-10-20/0/50?search=airport
+
+# Boolean flags
+/hubspot/tickets/list/2025-10-01/2025-10-20/0/50?closedOnly=true
+```
+
+## Rate Limiting
+
+API endpoints are rate-limited to ensure fair usage:
+
+| Endpoint Category | Limit | Time Window |
+|-------------------|-------|-------------|
+| Authentication | 100 requests | 1 hour |
+| Standard APIs | 1000 requests | 1 hour |
+| Export APIs | 50 requests | 1 hour |
+
+Rate limit headers are included in responses:
+
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1634567890
+```
+
+## SDK Examples
+
+### JavaScript/Node.js
+
+```javascript
+const axios = require('axios');
+
+class CompassAPI {
+  constructor(token) {
+    this.client = axios.create({
+      baseURL: 'http://localhost:2000',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  // User Management
+  async getUserProfile() {
+    const response = await this.client.get('/users/profile');
+    return response.data.data;
+  }
+
+  async updateDepartment(departmentId) {
+    const response = await this.client.post('/users/update-department', {
+      departmentId
+    });
+    return response.data.data;
+  }
+
+  // Email Analytics
+  async getEmailStats(startDate, endDate) {
+    const response = await this.client.get(
+      `/email-meter/stats/email-counts/${startDate}/${endDate}`
+    );
+    return response.data.data;
+  }
+
+  // HubSpot Tickets
+  async getTickets(startDate, endDate, startIndex = 0, endIndex = 50) {
+    const response = await this.client.get(
+      `/hubspot/tickets/list/${startDate}/${endDate}/${startIndex}/${endIndex}`
+    );
+    return response.data.data;
+  }
+}
+```
+
+### Python
+
+```python
+import requests
+from datetime import datetime
+
+class CompassAPI:
+    def __init__(self, token, base_url='http://localhost:2000'):
+        self.token = token
+        self.base_url = base_url
+        self.headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+    
+    def get_user_profile(self):
+        response = requests.get(f'{self.base_url}/users/profile', headers=self.headers)
+        response.raise_for_status()
+        return response.json()['data']
+    
+    def get_email_stats(self, start_date, end_date):
+        url = f'{self.base_url}/email-meter/stats/email-counts/{start_date}/{end_date}'
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()['data']
+    
+    def create_department(self, name, code, description=''):
+        data = {
+            'name': name,
+            'code': code,
+            'description': description
+        }
+        response = requests.post(f'{self.base_url}/departments/new', 
+                               headers=self.headers, json=data)
+        response.raise_for_status()
+        return response.json()['data']
+```
+
+## Testing
+
+### Using curl
+
+```bash
+# Authentication
+TOKEN=$(curl -s -X POST 'http://localhost:2000/auth/signin-google/CODE' | \
+  jq -r '.data.token')
+
+# Get user profile
+curl -s -X GET 'http://localhost:2000/users/profile' \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Get email statistics
+curl -s -X GET 'http://localhost:2000/email-meter/stats/email-counts/2025-10-01/2025-10-20' \
+  -H "Authorization: Bearer $TOKEN" | jq .
+```
+
+### Using Postman
+
+1. **Import Environment Variables:**
+   ```json
+   {
+     "base_url": "http://localhost:2000",
+     "auth_token": "{{your_token_here}}"
+   }
+   ```
+
+2. **Set Authorization Header:**
+   ```
+   Authorization: Bearer {{auth_token}}
+   ```
+
+3. **Test Endpoints:**
+   - GET `{{base_url}}/users/profile`
+   - GET `{{base_url}}/departments/list`
+   - GET `{{base_url}}/email-meter/stats/email-counts/2025-10-01/2025-10-20`
+
+## Best Practices
+
+### Security
+- Always use HTTPS in production
+- Store JWT tokens securely
+- Implement token refresh logic
+- Validate all input data
+
+### Performance
+- Use appropriate pagination
+- Cache static data when possible
+- Implement retry logic for failed requests
+- Monitor API usage and optimize
+
+### Error Handling
+- Always check HTTP status codes
+- Handle rate limit responses gracefully
+- Implement exponential backoff for retries
+- Log errors for debugging
+
+## Changelog
+
+### Version 1.0.0
+- Initial API release
+- OAuth authentication with Google and Microsoft
+- Complete user management system
+- Department hierarchy management
+- Email analytics and reporting
+- HubSpot ticket integration
+- Permission system
+- Audio transcription services
+
+## Support
+
+- **Documentation**: This comprehensive guide
+- **Status Page**: Check system status
+- **Support Email**: support@example.com
+- **GitHub Issues**: Report bugs and feature requests
+
+## Related Documentation
+
+- [Getting Started Guide](/overview/quick-start)
+- [Authentication Guide](/overview/authentication)
+- [Troubleshooting Guide](/overview/troubleshooting)
+- [Introduction](/overview/introduction)
+
+Ready to start building? Check out our [Quick Start Guide](/overview/quick-start) to make your first API call!

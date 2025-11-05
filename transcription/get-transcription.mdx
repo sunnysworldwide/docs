@@ -1,0 +1,409 @@
+---
+title: 'Get or Generate Transcription'
+openapi: 'POST /transcription/get-transcription/{fileId}'
+---
+
+Retrieves the transcription for a given file. If no transcription exists in the system, and a valid `audioUrl` is provided, a new transcription will be generated and stored.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+| Content-Type  | string | Yes      | application/json    |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| fileId    | string | Yes      | Unique identifier of the audio file      |
+
+#### Parameter Details
+- **fileId**: Must be a valid file identifier in the system
+- Used to lookup existing transcriptions or store new ones
+
+### Request Body
+
+```json
+{
+  "audioUrl": "https://example.com/uploads/audio-file.mp3"
+}
+```
+
+### Request Body Schema
+
+| Field    | Type   | Required | Description                              |
+|----------|--------|----------|------------------------------------------|
+| audioUrl | string | No       | URL of the audio file for transcription  |
+
+#### Field Details
+- **audioUrl**: Required only if no existing transcription is found
+- Must be a publicly accessible URL
+- Supports common audio formats (mp3, wav, m4a, etc.)
+- Used to generate new transcription when none exists
+
+## Response
+
+### 200 OK - Successfully retrieved or generated transcription
+
+```json
+{
+  "message": "",
+  "data": {
+    "transcriptionData": {
+      "status": "completed",
+      "text": "Hello, thank you for calling our support center. My name is Sarah and I'll be helping you today. Could you please provide me with your account number so I can look up your information?",
+      "duration": 42.5,
+      "confidence": 0.95,
+      "language": "en-US",
+      "createdAt": "2025-10-01T10:30:00.000Z",
+      "updatedAt": "2025-10-01T10:31:15.000Z",
+      "wordCount": 35,
+      "speakerCount": 1,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 8.2,
+          "text": "Hello, thank you for calling our support center.",
+          "confidence": 0.96
+        },
+        {
+          "start": 8.5,
+          "end": 15.3,
+          "text": "My name is Sarah and I'll be helping you today.",
+          "confidence": 0.94
+        },
+        {
+          "start": 15.8,
+          "end": 42.5,
+          "text": "Could you please provide me with your account number so I can look up your information?",
+          "confidence": 0.95
+        }
+      ]
+    }
+  }
+}
+```
+
+### 400 Bad Request
+
+```json
+{
+  "errorMessage": "Can't create transcriptions for this file!"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "errorMessage": "No transcription found and no audioUrl provided to create the transcriptions."
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get existing transcription
+```bash
+curl -X POST 'http://localhost:2000/transcription/get-transcription/670fcae25abf2d8e5c8a4a12' \
+  -H 'Authorization oBearerbearer your-jwt-token' \
+ \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+### Generate new transcription
+```bash
+curl -X POST 'http://localhost:2000/transcription/get-transcription/670fcae25abf2d8e5c8a4a12' \
+  -H 'Authorization oBearerbearer your-jwt-token' \
+ \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "audioUrl": "https://example.com/uploads/customer-call.mp3"
+  }'
+```
+
+## Data Fields Explained
+
+### Transcription Data
+| Field        | Type    | Description                              |
+|--------------|---------|------------------------------------------|
+| status       | string  | Transcription status (completed, processing, failed) |
+| text         | string  | Full transcribed text                    |
+| duration     | number  | Audio duration in seconds                |
+| confidence   | number  | Overall confidence score (0-1)           |
+| language     | string  | Detected language code                   |
+| createdAt    | string  | Transcription creation timestamp         |
+| updatedAt    | string  | Last update timestamp                    |
+| wordCount    | integer | Total word count in transcription        |
+| speakerCount | integer | Number of detected speakers              |
+
+### Segments Array
+| Field      | Type    | Description                              |
+|------------|---------|------------------------------------------|
+| start      | number  | Segment start time in seconds            |
+| end        | number  | Segment end time in seconds              |
+| text       | string  | Transcribed text for segment             |
+| confidence | number  | Confidence score for segment (0-1)       |
+
+## Use Cases
+
+- **Call Center Analytics**: Analyze customer service calls
+- **Meeting Transcriptions**: Transcribe meeting recordings
+- **Content Creation**: Convert audio content to text
+- **Accessibility**: Provide text alternatives for audio content
+- **Search and Analysis**: Enable text search in audio content
+
+## Implementation Examples
+
+### React Transcription Component
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function AudioTranscription({ fileId, audioUrl }) {
+  const [transcription, setTranscription] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (fileId) {
+      fetchTranscription();
+    }
+  }, [fileId]);
+
+  const fetchTranscription = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const requestBody = audioUrl ? { audioUrl } : {};
+      
+      const response = await fetch(`/transcription/get-transcription/${fileId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errorMessage || 'Failed to get transcription');
+      }
+
+      const data = await response.json();
+      setTranscription(data.data.transcriptionData);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  if (loading) return <div>Processing transcription...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!transcription) return <div>No transcription available</div>;
+
+  return (
+    <div className="transcription">
+      <div className="transcription-header">
+        <h3>Transcription</h3>
+        <div className="metadata">
+          <span>Duration: {formatTime(transcription.duration)}</span>
+          <span>Confidence: {(transcription.confidence * 100).toFixed(1)}%</span>
+          <span>Language: {transcription.language}</span>
+          <span>Words: {transcription.wordCount}</span>
+        </div>
+      </div>
+      
+      <div className="transcription-content">
+        <div className="full-text">
+          <h4>Full Text</h4>
+          <p>{transcription.text}</p>
+        </div>
+        
+        {transcription.segments && (
+          <div className="segments">
+            <h4>Timeline</h4>
+            {transcription.segments.map((segment, index) => (
+              <div key={index} className="segment">
+                <span className="timestamp">
+                  {formatTime(segment.start)} - {formatTime(segment.end)}
+                </span>
+                <span className="segment-text">{segment.text}</span>
+                <span className="confidence">
+                  {(segment.confidence * 100).toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### Audio Player with Transcription Sync
+```jsx
+function AudioPlayerWithTranscription({ transcription }) {
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef(null);
+
+  const handleTimeUpdate = () => {
+    setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const getCurrentSegment = () => {
+    if (!transcription.segments) return null;
+    return transcription.segments.find(segment => 
+      currentTime >= segment.start && currentTime <= segment.end
+    );
+  };
+
+  const seekToSegment = (startTime) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = startTime;
+    }
+  };
+
+  const currentSegment = getCurrentSegment();
+
+  return (
+    <div className="audio-transcription-player">
+      <audio
+        ref={audioRef}
+        controls
+        onTimeUpdate={handleTimeUpdate}
+        src={transcription.audioUrl}
+      />
+      
+      <div className="transcription-sync">
+        {transcription.segments.map((segment, index) => (
+          <div
+            key={index}
+            className={`segment ${currentSegment === segment ? 'active' : ''}`}
+            onClick={() => seekToSegment(segment.start)}
+          >
+            <span className="timestamp">
+              {formatTime(segment.start)}
+            </span>
+            <span className="text">{segment.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Transcription Status Polling
+```javascript
+class TranscriptionService {
+  static async getTranscription(fileId, audioUrl, onProgress) {
+    const maxRetries = 30; // 5 minutes with 10-second intervals
+    let attempts = 0;
+    
+    const pollTranscription = async () => {
+      try {
+        const response = await fetch(`/transcription/get-transcription/${fileId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(audioUrl ? { audioUrl } : {})
+        });
+
+        if (!response.ok) {
+          throw new Error('Transcription request failed');
+        }
+
+        const data = await response.json();
+        const transcription = data.data.transcriptionData;
+
+        if (transcription.status === 'completed') {
+          return transcription;
+        } else if (transcription.status === 'processing') {
+          if (onProgress) onProgress(transcription);
+          
+          if (attempts < maxRetries) {
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            return pollTranscription();
+          } else {
+            throw new Error('Transcription timeout');
+          }
+        } else {
+          throw new Error('Transcription failed');
+        }
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    return pollTranscription();
+  }
+}
+
+// Usage
+try {
+  const transcription = await TranscriptionService.getTranscription(
+    fileId, 
+    audioUrl, 
+    (progress) => console.log('Processing...', progress)
+  );
+  console.log('Transcription completed:', transcription);
+} catch (error) {
+  console.error('Transcription error:', error);
+}
+```
+
+## Best Practices
+
+1. **Error Handling**: Handle transcription failures gracefully
+2. **Progress Feedback**: Show progress indicators for long transcriptions
+3. **Audio Formats**: Use supported audio formats for best results
+4. **URL Validation**: Validate audio URLs before submission
+5. **Caching**: Cache transcriptions to avoid reprocessing
+
+## Performance Considerations
+
+- **Processing Time**: Transcription can take time for long audio files
+- **File Size**: Large audio files may hit size limits
+- **Concurrent Requests**: Limit concurrent transcription requests
+- **Storage**: Consider storage costs for transcriptions
+
+## Related Endpoints
+
+- Use `/transcription/{fileId}` to delete transcriptions
+- Use audio upload endpoints to upload files for transcription
+- Use user management endpoints to manage transcription permissions
+
+## Notes
+
+- Transcription quality depends on audio quality and clarity
+- Processing time varies with audio length and complexity
+- Generated transcriptions are stored for future retrieval
+- Speaker diarization may be available for multi-speaker audio
+- Language detection is automatic but can be specified if needed

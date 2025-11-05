@@ -1,0 +1,360 @@
+---
+title: 'Delete Transcription'
+openapi: 'DELETE /transcription/{fileId}'
+---
+
+Permanently removes the transcription record for the specified audio file from the system. This action cannot be undone.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                              |
+|-----------|--------|----------|------------------------------------------|
+| fileId    | string | Yes      | Unique identifier of the transcription or audio file to delete |
+
+#### Parameter Details
+- **fileId**: Must be a valid transcription or file identifier
+- Used to locate and delete the transcription record
+- This action is permanent and cannot be undone
+
+## Response
+
+### 200 OK - Transcription successfully deleted
+
+```json
+{
+  "message": "Successfully deleted the transcription",
+  "data": {}
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "errorMessage": "This transcription does not exist anymore in the system."
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Example
+
+```bash
+curl -X DELETE 'http://localhost:2000/transcription/670fcae25abf2d8e5c8a4a12' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+'
+```
+
+## Use Cases
+
+- **Data Cleanup**: Remove old or unnecessary transcriptions
+- **Storage Management**: Free up storage space by deleting transcriptions
+- **Privacy Compliance**: Remove transcriptions containing sensitive information
+- **Error Correction**: Delete incorrect transcriptions for reprocessing
+- **User Management**: Remove transcriptions when users are deleted
+
+## Implementation Examples
+
+### React Delete Transcription Component
+```jsx
+import React, { useState } from 'react';
+
+function TranscriptionManager({ fileId, onDelete }) {
+  const [deleting, setDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    
+    try {
+      const response = await fetch(`/transcription/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errorMessage || 'Failed to delete transcription');
+      }
+
+      setShowConfirm(false);
+      if (onDelete) onDelete(fileId);
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="transcription-manager">
+      {!showConfirm ? (
+        <button 
+          onClick={() => setShowConfirm(true)}
+          className="delete-button"
+          disabled={deleting}
+        >
+          Delete Transcription
+        </button>
+      ) : (
+        <div className="confirm-dialog">
+          <p>Are you sure you want to delete this transcription? This action cannot be undone.</p>
+          <div className="confirm-buttons">
+            <button 
+              onClick={handleDelete}
+              disabled={deleting}
+              className="confirm-delete"
+            >
+              {deleting ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+            <button 
+              onClick={() => setShowConfirm(false)}
+              disabled={deleting}
+              className="cancel-delete"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Batch Delete Transcriptions
+```jsx
+function BatchTranscriptionDelete({ transcriptions, onDeleteComplete }) {
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === transcriptions.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(transcriptions.map(t => t.fileId)));
+    }
+  };
+
+  const handleItemToggle = (fileId) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(fileId)) {
+      newSelected.delete(fileId);
+    } else {
+      newSelected.add(fileId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    setDeleting(true);
+    const deletePromises = Array.from(selectedItems).map(fileId =>
+      fetch(`/transcription/${fileId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    );
+
+    try {
+      const results = await Promise.allSettled(deletePromises);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      if (onDeleteComplete) {
+        onDeleteComplete({
+          successful,
+          failed,
+          total: selectedItems.size
+        });
+      }
+      
+      setSelectedItems(new Set());
+    } catch (error) {
+      console.error('Batch delete error:', error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="batch-delete">
+      <div className="selection-controls">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.size === transcriptions.length}
+            onChange={handleSelectAll}
+          />
+          Select All ({selectedItems.size} selected)
+        </label>
+        
+        <button 
+          onClick={handleBatchDelete}
+          disabled={deleting || selectedItems.size === 0}
+          className="batch-delete-button"
+        >
+          {deleting ? 'Deleting...' : `Delete Selected (${selectedItems.size})`}
+        </button>
+      </div>
+
+      <div className="transcription-list">
+        {transcriptions.map(transcription => (
+          <div key={transcription.fileId} className="transcription-item">
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedItems.has(transcription.fileId)}
+                onChange={() => handleItemToggle(transcription.fileId)}
+              />
+              {transcription.fileName || transcription.fileId}
+            </label>
+            <span className="transcription-info">
+              {new Date(transcription.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Transcription Cleanup Service
+```javascript
+class TranscriptionCleanupService {
+  static async deleteOldTranscriptions(daysOld = 90) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+    
+    try {
+      // Get list of old transcriptions (assuming there's an endpoint for this)
+      const response = await fetch(`/transcription/list?before=${cutoffDate.toISOString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch old transcriptions');
+      }
+      
+      const { transcriptions } = await response.json();
+      
+      // Delete old transcriptions
+      const deletePromises = transcriptions.map(transcription =>
+        fetch(`/transcription/${transcription.fileId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      );
+      
+      const results = await Promise.allSettled(deletePromises);
+      
+      return {
+        total: transcriptions.length,
+        successful: results.filter(r => r.status === 'fulfilled').length,
+        failed: results.filter(r => r.status === 'rejected').length
+      };
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      throw error;
+    }
+  }
+
+  static async deleteTranscriptionsByUser(userId) {
+    try {
+      const response = await fetch(`/transcription/list?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user transcriptions');
+      }
+      
+      const { transcriptions } = await response.json();
+      
+      const deletePromises = transcriptions.map(transcription =>
+        fetch(`/transcription/${transcription.fileId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      );
+      
+      await Promise.all(deletePromises);
+      
+      return transcriptions.length;
+    } catch (error) {
+      console.error('User cleanup error:', error);
+      throw error;
+    }
+  }
+}
+
+// Usage examples
+try {
+  // Delete transcriptions older than 90 days
+  const cleanupResult = await TranscriptionCleanupService.deleteOldTranscriptions(90);
+  console.log(`Cleanup complete: ${cleanupResult.successful} deleted, ${cleanupResult.failed} failed`);
+  
+  // Delete all transcriptions for a specific user
+  const userDeletedCount = await TranscriptionCleanupService.deleteTranscriptionsByUser('user123');
+  console.log(`Deleted ${userDeletedCount} transcriptions for user`);
+} catch (error) {
+  console.error('Cleanup failed:', error);
+}
+```
+
+## Best Practices
+
+1. **Confirmation**: Always confirm before deleting transcriptions
+2. **Backup**: Consider backing up important transcriptions before deletion
+3. **Batch Operations**: Use batch deletes for multiple items
+4. **Error Handling**: Handle partial failures in batch operations
+5. **Audit Logging**: Log deletion events for compliance
+
+## Security Considerations
+
+- **Authorization**: Ensure users can only delete their own transcriptions
+- **Permissions**: Require appropriate permissions for deletion
+- **Audit Trail**: Maintain audit logs of deletion activities
+- **Data Recovery**: Consider recovery options for accidental deletions
+
+## Performance Considerations
+
+- **Batch Size**: Limit batch delete operations to avoid timeouts
+- **Storage Cleanup**: Ensure storage is properly cleaned up after deletion
+- **Database Performance**: Large-scale deletions may impact database performance
+
+## Related Endpoints
+
+- Use `/transcription/get-transcription/{fileId}` to retrieve transcriptions
+- Use transcription list endpoints to find transcriptions to delete
+- Use user management endpoints for user-specific cleanup
+
+## Notes
+
+- Deletion is permanent and cannot be undone
+- Only the transcription text is deleted; original audio files may remain
+- System may automatically clean up very old transcriptions
+- Consider implementing soft deletes for recovery options
+- Storage space is freed up immediately after deletion

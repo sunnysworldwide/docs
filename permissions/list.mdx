@@ -1,0 +1,482 @@
+---
+title: 'List System Permissions'
+openapi: 'GET /permissions/list'
+---
+
+Returns a list of all available system permissions. By default, permissions are grouped by category (e.g., admin, user-management, ticketing). If the `noGrouping` query parameter is set to `true`, the endpoint returns a flat array instead. This endpoint replaces the legacy `/api-keys/scopes` route and is accessible only to admin users.
+
+## Request
+
+### Headers
+
+| Name           | Type   | Required | Description          |
+|----------------|--------|----------|----------------------|
+| Authorization | string | Yes      | Bearer token        |
+
+### Query Parameters
+
+| Parameter   | Type    | Required | Description                              |
+|-------------|---------|----------|------------------------------------------|
+| noGrouping  | boolean | No       | Return flat array instead of grouped by category |
+
+#### Parameter Details
+- **noGrouping**: Default `false`
+- When `false`: Returns permissions grouped by category
+- When `true`: Returns permissions as a flat array
+
+## Response
+
+### 200 OK - Successfully retrieved permissions list (grouped)
+
+```json
+{
+  "message": "",
+  "data": {
+    "permissions": {
+      "admin": [
+        {
+          "permission": "*",
+          "description": "All permissions - Full system access",
+          "category": "admin"
+        }
+      ],
+      "user-management": [
+        {
+          "permission": "users.manage",
+          "description": "Create, update, or delete user accounts",
+          "category": "user-management"
+        },
+        {
+          "permission": "users.view",
+          "description": "View user profiles and information",
+          "category": "user-management"
+        },
+        {
+          "permission": "users.permissions",
+          "description": "Manage user permissions and roles",
+          "category": "user-management"
+        }
+      ],
+      "ticketing": [
+        {
+          "permission": "tickets.view",
+          "description": "View tickets in the helpdesk system",
+          "category": "ticketing"
+        },
+        {
+          "permission": "tickets.manage",
+          "description": "Create, update, or delete tickets",
+          "category": "ticketing"
+        },
+        {
+          "permission": "tickets.export",
+          "description": "Export ticket data and reports",
+          "category": "ticketing"
+        }
+      ],
+      "departments": [
+        {
+          "permission": "departments.view",
+          "description": "View department information and hierarchy",
+          "category": "departments"
+        },
+        {
+          "permission": "departments.manage",
+          "description": "Create, update, or delete departments",
+          "category": "departments"
+        },
+        {
+          "permission": "departments.assign",
+          "description": "Assign users to departments and manage roles",
+          "category": "departments"
+        }
+      ],
+      "email-meter": [
+        {
+          "permission": "email-meter.view",
+          "description": "View email analytics and statistics",
+          "category": "email-meter"
+        },
+        {
+          "permission": "email-meter.export",
+          "description": "Export email analytics data",
+          "category": "email-meter"
+        }
+      ],
+      "transcription": [
+        {
+          "permission": "transcription.view",
+          "description": "View audio transcriptions",
+          "category": "transcription"
+        },
+        {
+          "permission": "transcription.manage",
+          "description": "Create, update, or delete transcriptions",
+          "category": "transcription"
+        }
+      ]
+    }
+  }
+}
+```
+
+### 200 OK - Successfully retrieved permissions list (flat array)
+
+```json
+{
+  "message": "",
+  "data": {
+    "permissions": [
+      {
+        "permission": "*",
+        "description": "All permissions - Full system access",
+        "category": "admin"
+      },
+      {
+        "permission": "users.manage",
+        "description": "Create, update, or delete user accounts",
+        "category": "user-management"
+      },
+      {
+        "permission": "users.view",
+        "description": "View user profiles and information",
+        "category": "user-management"
+      },
+      {
+        "permission": "tickets.view",
+        "description": "View tickets in the helpdesk system",
+        "category": "ticketing"
+      },
+      {
+        "permission": "tickets.manage",
+        "description": "Create, update, or delete tickets",
+        "category": "ticketing"
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorized – missing or invalid token"
+  }
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Forbidden – only admin users can access this endpoint"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "Internal server error"
+  }
+}
+```
+
+## Examples
+
+### Get grouped permissions (default)
+```bash
+curl -X GET 'http://localhost:2000/permissions/list' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+'
+```
+
+### Get flat array of permissions
+```bash
+curl -X GET 'http://localhost:2000/permissions/list?noGrouping=true' \
+  -H 'Authorization oBearerbearer your-jwt-token'
+'
+```
+
+## Data Fields Explained
+
+### Permission Object
+| Field       | Type   | Description                              |
+|-------------|--------|------------------------------------------|
+| permission  | string | Permission identifier (e.g., "users.view") |
+| description | string | Human-readable description of permission |
+| category    | string | Permission category for grouping          |
+
+### Permission Categories
+
+#### Admin
+| Permission | Description                              |
+|------------|------------------------------------------|
+| *          | All permissions - Full system access     |
+
+#### User Management
+| Permission     | Description                              |
+|----------------|------------------------------------------|
+| users.manage   | Create, update, or delete user accounts |
+| users.view     | View user profiles and information      |
+| users.permissions | Manage user permissions and roles   |
+
+#### Ticketing
+| Permission     | Description                              |
+|----------------|------------------------------------------|
+| tickets.view   | View tickets in the helpdesk system     |
+| tickets.manage | Create, update, or delete tickets       |
+| tickets.export | Export ticket data and reports           |
+
+#### Departments
+| Permission        | Description                              |
+|-------------------|------------------------------------------|
+| departments.view  | View department information and hierarchy |
+| departments.manage| Create, update, or delete departments    |
+| departments.assign| Assign users to departments and manage roles |
+
+#### Email Meter
+| Permission         | Description                              |
+|--------------------|------------------------------------------|
+| email-meter.view   | View email analytics and statistics      |
+| email-meter.export | Export email analytics data              |
+
+#### Transcription
+| Permission            | Description                              |
+|-----------------------|------------------------------------------|
+| transcription.view    | View audio transcriptions                |
+| transcription.manage  | Create, update, or delete transcriptions |
+
+## Use Cases
+
+- **Role Management**: Build user role assignment interfaces
+- **Access Control**: Implement permission-based access control
+- **Admin Panels**: Create admin permission management tools
+- **API Documentation**: Document available system permissions
+- **Security Auditing**: Review and audit system permissions
+
+## Implementation Examples
+
+### React Permission Selector Component
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function PermissionSelector({ onPermissionsChange, selectedPermissions = [] }) {
+  const [permissions, setPermissions] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [grouped, setGrouped] = useState(true);
+
+  useEffect(() => {
+    fetchPermissions();
+  }, [grouped]);
+
+  const fetchPermissions = async () => {
+    try {
+      const url = grouped ? '/permissions/list' : '/permissions/list?noGrouping=true';
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch permissions');
+      }
+      
+      const data = await response.json();
+      setPermissions(data.data.permissions);
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePermissionToggle = (permission) => {
+    const newSelection = selectedPermissions.includes(permission)
+      ? selectedPermissions.filter(p => p !== permission)
+      : [...selectedPermissions, permission];
+    
+    onPermissionsChange(newSelection);
+  };
+
+  if (loading) return <div>Loading permissions...</div>;
+
+  return (
+    <div className="permission-selector">
+      <div className="controls">
+        <label>
+          <input
+            type="checkbox"
+            checked={grouped}
+            onChange={(e) => setGrouped(e.target.checked)}
+          />
+          Group by Category
+        </label>
+      </div>
+
+      {grouped ? (
+        <GroupedPermissions 
+          permissions={permissions}
+          selectedPermissions={selectedPermissions}
+          onToggle={handlePermissionToggle}
+        />
+      ) : (
+        <FlatPermissions 
+          permissions={permissions}
+          selectedPermissions={selectedPermissions}
+          onToggle={handlePermissionToggle}
+        />
+      )}
+    </div>
+  );
+}
+
+function GroupedPermissions({ permissions, selectedPermissions, onToggle }) {
+  return (
+    <div className="grouped-permissions">
+      {Object.entries(permissions).map(([category, perms]) => (
+        <div key={category} className="permission-category">
+          <h4>{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+          {perms.map(perm => (
+            <label key={perm.permission} className="permission-item">
+              <input
+                type="checkbox"
+                checked={selectedPermissions.includes(perm.permission)}
+                onChange={() => onToggle(perm.permission)}
+              />
+              <span className="permission-name">{perm.permission}</span>
+              <span className="permission-description">{perm.description}</span>
+            </label>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Permission Validation Middleware
+```javascript
+const validatePermissions = (requiredPermissions) => {
+  return async (req, res, next) => {
+    try {
+      // Get user permissions from token/session
+      const userPermissions = await getUserPermissions(req.user.id);
+      
+      // Check if user has required permissions
+      const hasPermission = requiredPermissions.every(permission => 
+        userPermissions.includes(permission) || userPermissions.includes('*')
+      );
+      
+      if (!hasPermission) {
+        return res.status(403).json({
+          error: {
+            code: 'INSUFFICIENT_PERMISSIONS',
+            message: 'You do not have permission to access this resource'
+          }
+        });
+      }
+      
+      next();
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: 'PERMISSION_CHECK_FAILED',
+          message: 'Failed to validate permissions'
+        }
+      });
+    }
+  };
+};
+
+// Usage
+app.get('/api/admin/users', 
+  validatePermissions(['users.view', 'users.manage']),
+  getUserList
+);
+```
+
+### Permission Tree Component
+```jsx
+function PermissionTree({ permissions, selectedPermissions, onToggle }) {
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  return (
+    <div className="permission-tree">
+      {Object.entries(permissions).map(([category, perms]) => (
+        <div key={category} className="tree-node">
+          <div 
+            className="tree-header"
+            onClick={() => toggleCategory(category)}
+          >
+            <span className="tree-toggle">
+              {expandedCategories[category] ? '▼' : '▶'}
+            </span>
+            <span className="tree-label">{category}</span>
+            <span className="tree-count">({perms.length})</span>
+          </div>
+          
+          {expandedCategories[category] && (
+            <div className="tree-children">
+              {perms.map(perm => (
+                <label key={perm.permission} className="tree-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedPermissions.includes(perm.permission)}
+                    onChange={() => onToggle(perm.permission)}
+                  />
+                  <span>{perm.permission}</span>
+                  <small>{perm.description}</small>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+1. **Caching**: Cache permission data for user sessions
+2. **Admin Only**: Ensure only admin users can access this endpoint
+3. **Error Handling**: Handle 403 errors for non-admin users
+4. **Performance**: Use flat array for better performance with many permissions
+5. **Security**: Validate permissions on both client and server side
+
+## Security Considerations
+
+- **Admin Access**: This endpoint should only be accessible to admin users
+- **Permission Validation**: Always validate permissions on server side
+- **Token Security**: Ensure JWT tokens are properly validated
+- **Audit Logging**: Log permission access for security auditing
+
+## Related Endpoints
+
+- Use `/users/add-permissions` to assign permissions to users
+- Use `/users/remove-permissions` to remove permissions from users
+- Use `/auth/validate-session` to check current user permissions
+
+## Notes
+
+- Replaces legacy `/api-keys/scopes` endpoint
+- Permissions are hierarchical - admin "*" includes all other permissions
+- Categories help organize permissions logically
+- Flat array format is useful for programmatic permission checking
+- Permission list may change as system features are added or removed
