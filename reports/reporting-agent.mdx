@@ -4,116 +4,189 @@ description: 'Architecture and workflow of the COMPASS reporting agent system th
 ---
 
 ```mermaid
-graph LR
-    subgraph COMPASS
-        A[COMPASS API Export Report]
-    end
+flowchart TD
+  subgraph COMPASS_API["COMPASS schedules and exports"]
+    A[Schedules API]
+    B[Export endpoints and file downloads]
+  end
 
-    subgraph Agent Runtime
-        CRON[cron job scheduler] --> Railway[railway-service process-compass-reports]
-        Railway --> Fetch[fetch-ri-extended-daily-report.js]
-        Fetch --> Parse[generators ri-extended-daily-report.js]
-        Parse --> MapDept[mappers code-to-department.json]
-        Parse --> MapMgmt[mappers management-keywords.json]
-        Parse --> Processors[processors analytics]
-        Parse --> EmailGen[emailgen ri-attendance-report.js]
-        Processors --> OutlierGen[emailgen prod-outlier-report.js]
-        EmailGen --> SMTP[Email Sender]
-        OutlierGen --> SMTP
-        SMTP --> Recipients[Recipients CC lists]
-    end
+  subgraph Scheduler["Scheduler Cron Railway Service"]
+    SCHED_CRON[cron scheduler.js<br/>spawn process-compass-reports.js]
+    RAILWAY[cron railway-service.js<br/>node-cron Express health]
+    PROC_SCRIPT[cron process-compass-reports.js]
+  end
 
-    subgraph Utilities Tests
-        Scripts[scripts test harnesses] --> Parse
-        Helpers[helpers auth compass reports] --> Fetch
-    end
+  subgraph Agent["Reporting Agent"]
+    HELP_COMPASS[helpers compass.js<br/>CompassAPI client]
+    PROC_SCHEDULES[processRIReportSchedules<br/>routes schedules to processors]
+    FETCH_REPORT[reports fetch-ri-extended-daily-report.js<br/>download Excel CSV]
+    GENERATOR[generators ri-extended-daily-report.js<br/>parse and enrich]
+    MAPPERS[mappers<br/>code-to-department<br/>management-keywords]
+    PROCESSORS[processors<br/>avg high-outlier longest-call]
+    EMAIL_GEN[emailgen<br/>ri-attendance-report.js<br/>prod-outlier-report.js]
+    DELIVERY[delivery ri-email-sender.js<br/>send via Resend]
+    COMPASS_HISTORY[helpers compass.addExecutionHistory<br/>post run status back to Compass]
+  end
 
-    A --> Fetch
+  A --> |"getDueSchedules active schedules"| HELP_COMPASS
+  HELP_COMPASS --> PROC_SCRIPT
+  PROC_SCRIPT --> PROC_SCHEDULES
+  PROC_SCHEDULES --> |"for each schedule"| FETCH_REPORT
+  FETCH_REPORT --> GENERATOR
+  GENERATOR --> MAPPERS
+  GENERATOR --> PROCESSORS
+  GENERATOR --> EMAIL_GEN
+  EMAIL_GEN --> DELIVERY
+  DELIVERY --> COMPASS_HISTORY
+  B --> FETCH_REPORT
+  RAILWAY --> PROC_SCRIPT
+  SCHED_CRON --> PROC_SCRIPT
+
+  style COMPASS_API fill:#fff4e0,stroke:#e67e22
+  style Scheduler fill:#e8f4ff,stroke:#2b7cff
+  style Agent fill:#f0fff4,stroke:#2ca52c
 ```
 
-# Reporting Agent Architecture
+# Attendance & Utilization Report — System overview
 
-The COMPASS Reporting Agent is an automated system that processes daily reports, enriches data with business logic, and generates email reports for stakeholders. The system runs on a scheduled basis and handles multiple report types including attendance, utilization, and performance analytics.
+## Summary
 
-## Component Mapping
+The agent runs scheduled jobs that query Compass for due report schedules, download the exported Resource Inn report (Excel/CSV), parse and enrich rows, map department codes, filter management roles, compute utilization and attendance flags, run analytic processors (outliers, longest calls, average call length), generate HTML emails, and send them via the configured email delivery provider (Resend). Execution results and status are posted back to Compass.
 
-### COMPASS export
-- **Raw report source**: Excel/CSV files exported from COMPASS API
-- **Consumed by**: `fetch-ri-Through-daily-report.js`
-- **Purpose**: Provides the raw data that needs processing and analysis
+## High-level flow
 
-### fetch-ri-Through-daily-report.js
-- **Function**: Downloads and parses spreadsheet files
-- **Returns**: Raw row data for further processing
-- **Location**: Entry point for the data pipeline
+COMPASS Schedules API (helpers/compass.js) → Scheduler (scheduler.js or Railway service) triggers process-compass-reports.js → processRIReportSchedules iterates due schedules → for each schedule, fetch the report (reports/fetch-ri-extended-daily-report.js) → parse & enrich (generators/ri-extended-daily-report.js) → apply mappers (mappers/code-to-department.json, mappers/management-keywords.json) → run processors (processors/) → generate emails (emailgen/) → send (delivery/ri-email-sender.js) → addExecutionHistory back to Compass.
 
-### generators/ri-Through-daily-report.js
-- **Function**: Transforms raw rows into structured records
-- **Key fields generated**: `expectedHours`, `totalTimeOnFloorHours`, `breakMinutes`, `shiftCompletionPercentage`, `isAbsent`, `isOnTime`
-- **Purpose**: Applies business logic and calculations to raw data
+## Files & Locations
 
-### mappers/code-to-department.json
-- **Function**: Maps department codes to human-readable names
-- **Used by**: Generator for department resolution
-- **Purpose**: Provides consistent department naming across reports
+- **`helpers/compass.js`** — Compass API client and schedule processing entrypoints (healthCheck, fetchActiveSchedules, fetchScheduleById, getDueSchedules, addExecutionHistory). Responsible for routing schedules by reportType and enforcing Resource Inn sync.
 
-### mappers/management-keywords.json
-- **Function**: Contains keywords to identify management roles
-- **Used by**: `ri-attendance-report.js` for filtering
-- **Purpose**: Excludes management from performance calculations
+- **`process-compass-reports.js`** — CLI cron job that is executed by the scheduler. Calls CompassAPI and delegates to processRIReportSchedules.
 
-### processors/*
-- **Function**: Run per-report analytics and calculations
-- **Types**: Average call length, outliers, longest calls
-- **Purpose**: Generates insights and performance metrics
+- **`scheduler.js` and `railway-service.js`** — scheduling / always-on service that triggers process-compass-reports.js. Railway exposes manual trigger endpoints and health/status pages.
 
-### ri-attendance-report.js & emailgen/prod-outlier-report.js
-- **Function**: Generate email HTML and data for each report type
-- **Input**: Processed and enriched data
-- **Output**: Formatted email content ready for delivery
+- **`reports/fetch-ri-extended-daily-report.js`** — downloads the report file(s) (Excel/CSV) from Resource Inn or Compass export endpoints and returns raw rows/path to local temp file.
 
-### delivery/ri-email-sender.js
-- **Function**: Sends generated emails to recipients
-- **Handles**: SMTP delivery, recipient lists, CC management
-- **Purpose**: Final delivery step in the pipeline
+- **`generators/ri-extended-daily-report.js`** — transforms raw rows into structured records (expectedHours, totalTimeOnFloorHours, breakMinutes, shiftCompletionPercentage, isAbsent, isOnTime, isLate), and applies department mapping.
 
-### cron/process-compass-reports.js, cron/scheduler.js, cron/railway-service.js
-- **Function**: Scheduling and coordination
-- **Triggers**: Automated execution of fetch → process → send workflow
-- **Purpose**: Ensures timely report generation and delivery
+- **`mappers/code-to-department.json`** — maps department codes from Compass to Resource Inn department name variants used by the generator for filtering.
 
-### helpers/*
-- **Function**: Shared utilities and common functions
-- **Types**: Authentication helpers, COMPASS API helpers, report helpers
-- **Purpose**: Code reuse and consistency across components
+- **`mappers/management-keywords.json`** — centralized list of management keywords used to exclude management roles (case-insensitive substring match) in ri-attendance-report.js.
 
-### scripts/*.js
-- **Function**: Local test harnesses and development tools
-- **Usage**: Run during development for testing and debugging
-- **Purpose**: Enable local development and testing workflows
+- **`processors/*`** — analytics modules for average call length, outliers, longest call.
 
-## Workflow Process
+- **`emailgen/ri-attendance-report.js`** — filters management roles, applies performance thresholds, builds the attendance HTML payload.
 
-1. **Scheduling**: Cron job triggers the railway service
-2. **Data Fetch**: Resource Inn data is downloaded and parsed
-3. **Data Enrichment**: Raw rows are transformed with business logic
-4. **Mapping**: Department codes and management roles are resolved
-5. **Processing**: Analytics and calculations are applied
-6. **Report Generation**: HTML emails are created for each report type
-7. **Delivery**: Emails are sent to configured recipients
+- **`delivery/ri-email-sender.js`** — sends generated HTML via Resend API and returns email id and recipients.
 
-## Configuration Points
+- **`helpers/compass.addExecutionHistory`** — records result status back in Compass for observability.
 
-- **Department mappings**: Update `code-to-department.json` for new departments
-- **Management filtering**: Modify `management-keywords.json` to change exclusion rules
-- **Scheduling**: Adjust cron expressions in scheduler files
-- **Recipients**: Configure email lists in delivery components
-- **Thresholds**: Modify calculation logic in generator files
+## Routing & Triggers
+
+### Schedule Processing Rules
+- **Due-only vs forceAll**: Schedules from Compass include `reportType` and `department` (with `code`). Only schedules with `hasResourceInnSync` are processed.
+- **Department routing**: `processRIReportSchedules` routes per-schedule using the schedule department code to pass into generator/email functions so the final output is department-scoped.
+- **Manual triggers**: Railway `/trigger` and `/trigger/:scheduleId` endpoints can force processing of all schedules or a single schedule by ID.
+
+### Trigger Types
+- **Scheduled**: Cron-based execution via `scheduler.js`
+- **Manual**: Railway service endpoints for on-demand processing
+- **Health checks**: Built-in health endpoints for monitoring
+
+## How to Change Behavior
+
+### Schedule Configuration
+To adjust which schedules run, configure Compass schedule settings (cron & Resource Inn sync).
+
+### Management Filtering
+To change management filtering, edit `management-keywords.json`:
+```json
+["Manager", "Lead", "Supervisor", "Director"]
+```
+
+### Performance Thresholds
+To change thresholds (low performance / break limits), search `0.75` and `> 65` in the repo (in `ri-attendance-report.js`) and update logic in that file:
+```javascript
+// Low performance threshold
+isLowPerformance = totalTimeOnFloorHours < (expectedHours * 0.75);
+
+// Excessive break threshold
+hasExcessiveBreak = breakMinutes > 65;
+```
+
+### Department Mapping
+Update `code-to-department.json` to add or modify department code mappings.
+
+## Troubleshooting
+
+### Common Issues
+
+**Compass Health Check Errors**
+- **401 Unauthorized**: Check `COMPASS_API_KEY` environment variable
+- **404 Not Found**: Verify `COMPASS_URL` is correct and API is accessible
+- **Connection timeout**: Check network connectivity and firewall settings
+
+**Missing Environment Variables**
+Required variables:
+```bash
+COMPASS_URL=https://your-compass-instance.com
+COMPASS_API_KEY=your-api-key
+RESEND_API_KEY=your-resend-key
+```
+
+**File Cleanup Issues**
+- Temporary files not cleaned up: Check temp directory permissions
+- Large file downloads failing: Verify disk space and download limits
+- Excel parsing errors: Validate file format and encoding
+
+**Schedule Processing**
+- No schedules processed: Check `hasResourceInnSync` flag in Compass
+- Duplicate emails: Verify schedule uniqueness and timing
+- Missing department data: Validate `code-to-department.json` mappings
+
+### Debug Commands
+```bash
+# Test Compass connection
+node helpers/compass.js --health-check
+
+# Test schedule processing
+node process-compass-reports.js --dry-run
+
+# Manual trigger specific schedule
+curl -X POST "http://localhost:3000/trigger/SCHEDULE_ID"
+```
 
 ## Development & Testing
 
-Use the scripts in the `scripts/` directory for local testing:
-- Test data processing workflows
-- Validate email generation
-- Debug calculation logic
-- Test configuration changes
+### Local Development
+1. Set up environment variables
+2. Run health check: `node helpers/compass.js --health-check`
+3. Test schedule processing: `node process-compass-reports.js --dry-run`
+4. Verify email generation locally before sending
+
+### Testing Workflow
+```bash
+# Test individual components
+node scripts/test-ri-extended-daily-report.js
+node scripts/test-attendance-report.js
+
+# Full integration test
+node process-compass-reports.js --test-mode
+```
+
+## Monitoring & Observability
+
+### Execution History
+All runs are logged back to Compass via `addExecutionHistory` including:
+- Schedule ID and timestamp
+- Success/failure status
+- Records processed
+- Email delivery results
+- Error details (if applicable)
+
+### Health Endpoints
+- `/health` - Overall system health
+- `/status` - Detailed component status
+- `/metrics` - Processing statistics
+
+The Reporting Agent provides a robust, scalable solution for automated report processing with comprehensive error handling, monitoring, and configuration flexibility.
