@@ -1,96 +1,77 @@
-```mdx
 ---
 title: "Get Incident Trend Statistics"
-description: "Retrieve daily incident trend data between two dates, including labels and incident count series."
+description: "Retrieve daily incident trend data between two dates, including date labels and incident count series."
 ---
 
 # Get Incident Trend Statistics
 
-Use this endpoint to retrieve **incident trend data** between two dates.  
-You receive a list of date labels and a corresponding series of incident counts.
+Use this endpoint to retrieve **incident trend data** between two dates.\
+You receive a list of date labels and a matching series of incident counts.
 
 <Info>
-This endpoint belongs to the **Stats** section.
-Authentication is required.
+  This endpoint belongs to the **Stats** section and requires authentication.
 </Info>
 
+---
+
 ## Endpoint
+
+```http
+GET /stats/incidents-trend/:startDate/:endDate
 ```
 
-GET /stats/incidents-trend/:startDate/:endDate
+### Example Request
 
-````
+```bash
+curl -X GET "https://api.example.com/stats/incidents-trend/2024-01-01/2024-01-31" \
+  -H "Authorization: Bearer <your_access_token>"
+```
 
-This endpoint returns the number of incidents created each day within the provided date range.
-
-If no valid range is provided, the backend automatically normalizes the dates to a **one-week window starting today**.
+---
 
 ## Authentication
 
+Include your access token:
+
 ```bash
 Authorization: Bearer <your_access_token>
-````
+```
+
+---
 
 ## Path Parameters
 
-<ParamField type="string" required>
-  Start date in `YYYY-MM-DD` format.\
-  Used to define the beginning of the statistics window.
+<ParamField type="string" required="true">
+  
 </ParamField>
 
-<ParamField type="string" required>
-  End date in `YYYY-MM-DD` format.\
-  Used to define the end of the statistics window.
+<ParamField type="string" required="true">
+  
 </ParamField>
-
-<Note>
-  Dates are inclusive. The backend adjusts invalid or empty date values into a correct range automatically.
-</Note>
-
-## Response Structure
-
-<ResponseField name="labels" type="string[]">
-  Array of date labels representing each interval day.
-</ResponseField>
-
-<ResponseField name="series" type="number[]">
-  Array of incident counts aligned with the `labels` array.
-</ResponseField>
 
 ---
 
-## Example Request
+## Response
 
-<RequestExample>
-
-```bash
-curl -X GET "https://api.example.com/stats/incidents-trend/2025-01-01/2025-01-07" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-</RequestExample>
-
----
-
-## Successful Response Example
+### Success Response
 
 <ResponseExample>
 
 ```json
 {
-  "status": true,
+  "success": true,
   "message": "",
   "data": {
     "labels": [
-      "2025-01-01",
-      "2025-01-02",
-      "2025-01-03",
-      "2025-01-04",
-      "2025-01-05",
-      "2025-01-06",
-      "2025-01-07"
+      "2024-01-01",
+      "2024-01-02",
+      "2024-01-03"
     ],
-    "series": [5, 2, 1, 0, 3, 4, 6]
+    "series": [
+      4,
+      9,
+      2
+    ]
   }
 }
 ```
@@ -99,27 +80,52 @@ curl -X GET "https://api.example.com/stats/incidents-trend/2025-01-01/2025-01-07
 
 ---
 
-## Error Response Example
+### Response Fields
 
-<ErrorResponseExample>
-  ```json
-  {
-    "status": false,
-    "errorMessage": "Invalid date format provided.",
-    "service": "/stats/incidents-trend/:startDate/:endDate",
-    "http": "GET"
-  }
-  ```
-</ErrorResponseExample>
+<ResponseField name="labels" type="string[]">
+  
+</ResponseField>
+
+<ResponseField name="series" type="number[]">
+  
+</ResponseField>
+
+---
+
+## Error Responses
+
+<ResponseExample>
+
+```json
+{
+  "success": false,
+  "error": "Invalid date range provided.",
+  "status": 404
+}
+```
+
+</ResponseExample>
+
+<ResponseExample>
+
+```json
+{
+  "success": false,
+  "error": "Something went wrong",
+  "status": 500
+}
+```
+
+</ResponseExample>
 
 ---
 
 ## Notes
 
-<Tip>
-  Use this endpoint to visualize incident trends in charts or dashboards.
-</Tip>
+<Note>
+  The date range must be valid and `startDate` must be less than or equal to `endDate`.
+</Note>
 
-<Info>
-  All incident counts are derived from ticket `createdAt` timestamps.
-</Info>
+<Tip>
+  Use the returned labels directly on your chart’s X-axis for consistent trend visualization.
+</Tip>
