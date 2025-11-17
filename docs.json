@@ -69,10 +69,7 @@
           },
           {
             "group": "Permissions",
-            "pages": [
-              "users/add-permissions",
-              "users/remove-permissions"
-            ]
+            "pages": ["users/add-permissions", "users/remove-permissions"]
           }
         ]
       },
@@ -81,10 +78,7 @@
         "groups": [
           {
             "group": "Department Information",
-            "pages": [
-              "departments/list",
-              "departments/hierarchy"
-            ]
+            "pages": ["departments/list", "departments/hierarchy"]
           },
           {
             "group": "Department Management",
@@ -96,10 +90,7 @@
           },
           {
             "group": "User Management",
-            "pages": [
-              "departments/add-users",
-              "departments/assign-manager"
-            ]
+            "pages": ["departments/add-users", "departments/assign-manager"]
           }
         ]
       },
@@ -108,10 +99,7 @@
         "groups": [
           {
             "group": "Setup & Integration",
-            "pages": [
-              "email-meter/signin",
-              "email-meter/webhook"
-            ]
+            "pages": ["email-meter/signin", "email-meter/webhook"]
           },
           {
             "group": "Email Statistics",
@@ -161,9 +149,7 @@
           },
           {
             "group": "Stats",
-            "pages": [
-              "hubspot-tickets/incident-trend"
-            ]
+            "pages": ["hubspot-tickets/incident-trend"]
           }
         ]
       },
@@ -172,9 +158,7 @@
         "groups": [
           {
             "group": "System Permissions",
-            "pages": [
-              "permissions/list"
-            ]
+            "pages": ["permissions/list"]
           }
         ]
       },
@@ -183,10 +167,7 @@
         "groups": [
           {
             "group": "Audio Transcription",
-            "pages": [
-              "transcription/get-transcription",
-              "transcription/delete"
-            ]
+            "pages": ["transcription/get-transcription", "transcription/delete"]
           }
         ]
       }
@@ -205,10 +186,7 @@
     ]
   },
   "contextual": {
-    "options": [
-      "copy",
-      "view"
-    ]
+    "options": ["copy", "view"]
   },
   "footer": {
     "socials": {
