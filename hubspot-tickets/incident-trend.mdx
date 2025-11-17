@@ -1,32 +1,125 @@
+```mdx
 ---
-title: "New file"
-description: "Description of your new file."
----
-
----
-
 title: "Get Incident Trend Statistics"
+description: "Retrieve daily incident trend data between two dates, including labels and incident count series."
+---
 
-description: "Retrieve daily incident trend data between two dates, including labels and series counts."
+# Get Incident Trend Statistics
+
+Use this endpoint to retrieve **incident trend data** between two dates.  
+You receive a list of date labels and a corresponding series of incident counts.
+
+<Info>
+This endpoint belongs to the **Stats** section.
+Authentication is required.
+</Info>
+
+## Endpoint
+```
+
+GET /stats/incidents-trend/:startDate/:endDate
+
+````
+
+This endpoint returns the number of incidents created each day within the provided date range.
+
+If no valid range is provided, the backend automatically normalizes the dates to a **one-week window starting today**.
+
+## Authentication
+
+```bash
+Authorization: Bearer <your_access_token>
+````
+
+## Path Parameters
+
+<ParamField type="string" required>
+  Start date in `YYYY-MM-DD` format.\
+  Used to define the beginning of the statistics window.
+</ParamField>
+
+<ParamField type="string" required>
+  End date in `YYYY-MM-DD` format.\
+  Used to define the end of the statistics window.
+</ParamField>
+
+<Note>
+  Dates are inclusive. The backend adjusts invalid or empty date values into a correct range automatically.
+</Note>
+
+## Response Structure
+
+<ResponseField name="labels" type="string[]">
+  Array of date labels representing each interval day.
+</ResponseField>
+
+<ResponseField name="series" type="number[]">
+  Array of incident counts aligned with the `labels` array.
+</ResponseField>
 
 ---
 
-# Overview
+## Example Request
 
-Use this endpoint to retrieve **incident trend statistics** between a start and end date.  
+<RequestExample>
 
-The response includes the list of dates (“labels”) and a numerical data series representing how many incidents occurred on each day.
+```bash
+curl -X GET "https://api.example.com/stats/incidents-trend/2025-01-01/2025-01-07" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
 
-\<Info\>
+</RequestExample>
 
-This endpoint belongs to the **Stats** section and requires authentication.
+---
 
-\</Info\>
+## Successful Response Example
 
-# Authentication
+<ResponseExample>
 
-This endpoint requires a valid access token.
+```json
+{
+  "status": true,
+  "message": "",
+  "data": {
+    "labels": [
+      "2025-01-01",
+      "2025-01-02",
+      "2025-01-03",
+      "2025-01-04",
+      "2025-01-05",
+      "2025-01-06",
+      "2025-01-07"
+    ],
+    "series": [5, 2, 1, 0, 3, 4, 6]
+  }
+}
+```
 
-\`\`\`bash
+</ResponseExample>
 
-Authorization: Bearer \<your_token_here\>
+---
+
+## Error Response Example
+
+<ErrorResponseExample>
+  ```json
+  {
+    "status": false,
+    "errorMessage": "Invalid date format provided.",
+    "service": "/stats/incidents-trend/:startDate/:endDate",
+    "http": "GET"
+  }
+  ```
+</ErrorResponseExample>
+
+---
+
+## Notes
+
+<Tip>
+  Use this endpoint to visualize incident trends in charts or dashboards.
+</Tip>
+
+<Info>
+  All incident counts are derived from ticket `createdAt` timestamps.
+</Info>
