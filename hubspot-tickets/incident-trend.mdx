@@ -1,131 +1,107 @@
 ---
-title: "Get Incident Trend Statistics"
-description: "Retrieve daily incident trend data between two dates, including date labels and incident count series."
+title: "Incidents Trend Stats"
+description: "Retrieve the trend of incidents (tickets) within a specified date range."
 ---
 
-# Get Incident Trend Statistics
+# Incidents Trend Stats
 
-Use this endpoint to retrieve **incident trend data** between two dates.\
-You receive a list of date labels and a matching series of incident counts.
-
-<Info>
-  This endpoint belongs to the **Stats** section and requires authentication.
-</Info>
-
----
+Fetch the trend of incidents (tickets) for a given date range. The endpoint returns the labels (dates) and series (number of tickets per date) to visualize trends.
 
 ## Endpoint
 
-```http
-GET /stats/incidents-trend/:startDate/:endDate
+`GET /hubspot/stats/incidents-trend/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                       |
+| ----------- | ------ | -------- | --------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD) |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)   |
+
+### Request Headers
+
+| Header          | Value                    | Description                          |
+| --------------- | ------------------------ | ------------------------------------ |
+| `Content-Type`  | `application/json`       | Required for sending JSON body       |
+| `Authorization` | `Bearer <token>`         | User authentication token            |
+
+### Request Body
+
+```json
+{
+  "user": {
+    "id": "string",
+    "role": "string"
+  }
+}
 ```
 
-### Example Request
-
-```bash
-curl -X GET "https://api.example.com/stats/incidents-trend/2024-01-01/2024-01-31" \
-  -H "Authorization: Bearer <your_access_token>"
-```
-
----
-
-## Authentication
-
-Include your access token:
-
-```bash
-Authorization: Bearer <your_access_token>
-```
-
----
-
-## Path Parameters
-
-<ParamField type="string" required="true">
-  
-</ParamField>
-
-<ParamField type="string" required="true">
-  
-</ParamField>
-
----
+> **Note:** `user` is optional and depends on the authenticated context.
 
 ## Response
 
-### Success Response
-
-<ResponseExample>
+### Success Response (200)
 
 ```json
 {
   "success": true,
   "message": "",
   "data": {
-    "labels": [
-      "2024-01-01",
-      "2024-01-02",
-      "2024-01-03"
-    ],
-    "series": [
-      4,
-      9,
-      2
-    ]
+    "labels": ["2025-11-01", "2025-11-02", "2025-11-03"],
+    "series": [5, 3, 7]
   }
 }
 ```
 
-</ResponseExample>
-
----
-
-### Response Fields
-
-<ResponseField name="labels" type="string[]">
-  
-</ResponseField>
-
-<ResponseField name="series" type="number[]">
-  
-</ResponseField>
-
----
-
-## Error Responses
-
-<ResponseExample>
+### Error Response
 
 ```json
 {
   "success": false,
-  "error": "Invalid date range provided.",
-  "status": 404
+  "message": "Error message",
+  "service": "/hubspot/stats/incidents-trend/:startDate/:endDate",
+  "http": "GET"
 }
 ```
 
-</ResponseExample>
+## Authentication
 
-<ResponseExample>
+This endpoint requires the user to be authenticated. Use the `Authorization` header with a valid token.
 
-```json
-{
-  "success": false,
-  "error": "Something went wrong",
-  "status": 500
-}
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/incidents-trend/2025-11-01/2025-11-03" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer YOUR_TOKEN" \
+-d '{
+  "user": {
+    "id": "123",
+    "role": "admin"
+  }
+}'
 ```
 
-</ResponseExample>
+## Example Request (JavaScript - fetch)
 
----
+```javascript
+const response = await fetch("/hubspot/stats/incidents-trend/2025-11-01/2025-11-03", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_TOKEN"
+  },
+  body: JSON.stringify({
+    user: { id: "123", role: "admin" }
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
 
 ## Notes
 
-<Note>
-  The date range must be valid and `startDate` must be less than or equal to `endDate`.
-</Note>
-
-<Tip>
-  Use the returned labels directly on your chart’s X-axis for consistent trend visualization.
-</Tip>
+- The `series` is calculated based on ticket creation dates.
+- Dates without any tickets will have a count of `0`.
+- The `trend` object is generated internally and mapped to `labels` and `series`.
