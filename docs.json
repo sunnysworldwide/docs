@@ -158,6 +158,12 @@
               "hubspot-tickets/ticket-details",
               "hubspot-tickets/export"
             ]
+          },
+          {
+            "group": "Stats",
+            "pages": [
+              "hubspot-tickets/incident-trend"
+            ]
           }
         ]
       },
