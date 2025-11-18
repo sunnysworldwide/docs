@@ -1,0 +1,99 @@
+---
+title: "Feedback Severities"
+description: "Retrieve aggregated feedback severity statistics for the specified date range."
+---
+
+# Feedback Severities
+
+Returns aggregated counts of feedback grouped by severity level, formatted for charting.
+
+## Endpoint
+
+`GET /hubspot/stats/feedback-severities/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date (YYYY-MM-DD)                      |
+| `endDate`   | string | ✅       | End date (YYYY-MM-DD)                        |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> No request body is required.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "labels": ["Low", "Medium", "High"],
+    "series": [12, 34, 5]
+  }
+}
+```
+
+**Field descriptions:**
+
+- `labels`: Array of severity levels  
+- `series`: Array of counts corresponding to each label (in the same order)
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any HTTP status outside 200 indicates an error.
+
+---
+
+## Authentication
+
+A valid JWT token must be provided via the `Authorization` header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/feedback-severities/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/feedback-severities/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: { "Authorization": "Bearer YOUR_TOKEN" }
+  }
+);
+
+console.log(await res.json());
+```
+
+---
+
+## Notes
+
+- This endpoint is typically used for pie, bar, or donut charts.
+- Dates must follow the `YYYY-MM-DD` format.

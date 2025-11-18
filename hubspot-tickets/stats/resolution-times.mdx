@@ -1,0 +1,108 @@
+---
+title: "Resolution Times"
+description: "Retrieve minimum, maximum, average, and median resolution times for incidents within a date range."
+---
+
+# Resolution Times
+
+Returns statistical resolution time metrics for incidents occurring within the specified date range.
+
+## Endpoint
+
+`GET /hubspot/stats/resolution-times/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> **Note:** No request body is required.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "resolutionTimes": {
+      "min": 12,
+      "max": 185,
+      "average": 74.5,
+      "median": 62
+    }
+  }
+}
+```
+
+**Field descriptions:**
+
+- `resolutionTimes`: Statistical metrics for how long incidents took to resolve  
+  - `min`: Smallest resolution time  
+  - `max`: Largest resolution time  
+  - `average`: Arithmetic mean  
+  - `median`: Middle value in the sorted dataset  
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 response indicates an error.
+
+---
+
+## Authentication
+
+A valid JWT token must be provided in the `Authorization` header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/resolution-times/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/resolution-times/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
+
+console.log(await res.json());
+```
+
+---
+
+## Notes
+
+- Dates must follow the `YYYY-MM-DD` format.
+- Metrics are based on calculated resolution times for all incidents in the range.

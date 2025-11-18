@@ -1,0 +1,106 @@
+---
+title: "Resolution Times SLA"
+description: "Retrieve SLA compliance statistics for incident resolution times within the specified date range."
+---
+
+# Resolution Times SLA
+
+Returns statistics showing how many incidents were resolved within SLA, how many missed SLA, and the overall compliance percentage.
+
+## Endpoint
+
+`GET /hubspot/stats/resolution-times-sla/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> No request body is required.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "resolutionSLA": {
+      "withinSLA": 42,
+      "afterSLA": 18,
+      "percentage": 70
+    }
+  }
+}
+```
+
+**Field descriptions:**
+
+- `resolutionSLA`: SLA statistics  
+  - `withinSLA`: Number of incidents resolved within SLA  
+  - `afterSLA`: Number of incidents resolved after SLA  
+  - `percentage`: Percentage of incidents resolved within SLA  
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 response indicates an error.
+
+---
+
+## Authentication
+
+A valid JWT token must be included in the `Authorization` header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/resolution-times-sla/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/resolution-times-sla/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
+
+console.log(await res.json());
+```
+
+---
+
+## Notes
+
+- Dates must be in the `YYYY-MM-DD` format.
+- SLA statistics are calculated from incident resolution times within the date range.

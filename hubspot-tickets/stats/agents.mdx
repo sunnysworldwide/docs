@@ -1,0 +1,130 @@
+---
+title: "Agents Statistics"
+description: "Retrieve incident, resolution, and SLA statistics grouped by agent for the specified date range."
+---
+
+# Agents Statistics
+
+Returns a list of agents and their associated incident statistics, including counts, resolution metrics, and SLA performance.
+
+## Endpoint
+
+`GET /hubspot/stats/agents/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date (YYYY-MM-DD)                      |
+| `endDate`   | string | ✅       | End date (YYYY-MM-DD)                        |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> No request body is required.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "agents": [
+      {
+        "name": "John Doe",
+        "generalStats": {
+          "open": 4,
+          "closed": 23
+        },
+        "resolution": {
+          "times": {
+            "min": 12,
+            "max": 180,
+            "average": 75.2,
+            "median": 64
+          },
+          "sla": {
+            "withinSLA": 18,
+            "afterSLA": 9,
+            "percentage": 66.67
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Field Descriptions
+
+#### **agents[]**
+
+| Field | Description |
+|-------|-------------|
+| `name` | Name of the agent |
+| `generalStats.open` | Number of open incidents assigned to the agent |
+| `generalStats.closed` | Number of closed incidents assigned to the agent |
+| `resolution.times` | Resolution time metrics (min, max, average, median) |
+| `resolution.sla` | SLA compliance metrics (within SLA, after SLA, percentage) |
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 status code indicates an error.
+
+---
+
+## Authentication
+
+Provide a valid JWT token using the `Authorization` header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/agents/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/agents/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
+
+console.log(await res.json());
+```
+
+---
+
+## Notes
+
+- Dates must use the format `YYYY-MM-DD`.
+- Returned metrics can be used to compare agent performance across the date range.

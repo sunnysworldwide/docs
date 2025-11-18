@@ -1,0 +1,121 @@
+---
+title: "Geo Map"
+description: "Retrieve GeoJSON data for rendering a heatmap on a world or regional map."
+---
+
+# Geo Map
+
+Returns GeoJSON data containing geographical features enriched with incident statistics, used for rendering heatmaps.
+
+## Endpoint
+
+`GET /hubspot/stats/geo-map/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> **Note:** No request body is expected for this endpoint.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": []
+          },
+          "properties": {
+            "name": "District Of Columbia",
+            "count": 19,
+            "type": "state"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+**Field descriptions:**
+
+- `geojson`: A standard GeoJSON FeatureCollection  
+- `features`: List of geographic features  
+  - `geometry`: Shape of the region (Polygon, MultiPolygon, etc.)  
+  - `properties`: Metadata for heatmap calculations  
+    - `name`: Name of the region  
+    - `count`: Number of incidents within the date range  
+    - `type`: Region type (`state`, `country`, etc.)
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 response indicates an error.
+
+---
+
+## Authentication
+
+Provide a valid JWT token in the `Authorization` header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/geo-map/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/geo-map/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: { "Authorization": "Bearer YOUR_TOKEN" }
+  }
+);
+
+const data = await res.json();
+console.log(data);
+```
+
+---
+
+## Notes
+
+- Returned GeoJSON fully conforms to the standard `FeatureCollection` format.
+- The `properties` object always contains at least `name`, `count`, and `type`.
+- Dates must be formatted as `YYYY-MM-DD`.

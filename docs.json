@@ -154,7 +154,13 @@
               "hubspot-tickets/stats/top-affiliates-involved",
               "hubspot-tickets/stats/top-categories",
               "hubspot-tickets/stats/compliments-count",
-              "hubspot-tickets/stats/geo-map-filters"
+              "hubspot-tickets/stats/geo-map-filters",
+              "hubspot-tickets/stats/geo-map",
+              "hubspot-tickets/stats/resolution-times",
+              "hubspot-tickets/stats/resolution-times-sla",
+              "hubspot-tickets/stats/departments",
+              "hubspot-tickets/stats/agents",
+              "hubspot-tickets/stats/feedback-severities"
             ]
           }
         ]

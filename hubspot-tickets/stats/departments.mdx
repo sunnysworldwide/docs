@@ -1,0 +1,136 @@
+---
+title: "Departments Statistics"
+description: "Retrieve detailed incident statistics grouped by department for the specified date range."
+---
+
+# Departments Statistics
+
+Returns a list of departments along with their incident counts, resolution time metrics, SLA compliance, and trend data.
+
+## Endpoint
+
+`GET /hubspot/stats/departments/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date (YYYY-MM-DD)                      |
+| `endDate`   | string | ✅       | End date (YYYY-MM-DD)                        |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> No request body is required.
+
+---
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "departments": [
+      {
+        "name": "Customer Support",
+        "generalStats": {
+          "open": 12,
+          "closed": 48,
+          "total": 60
+        },
+        "resolution": {
+          "times": {
+            "min": 5,
+            "max": 240,
+            "average": 78.4,
+            "median": 64
+          },
+          "sla": {
+            "withinSLA": 39,
+            "afterSLA": 21,
+            "percentage": 65
+          }
+        },
+        "trend": {
+          "series": [2, 5, 7, 3],
+          "labels": ["2025-11-01", "2025-11-02", "2025-11-03", "2025-11-04"]
+        }
+      }
+    ]
+  }
+}
+```
+
+### Field Descriptions
+
+#### **departments[]**
+
+| Field | Description |
+|-------|-------------|
+| `name` | Department name |
+| `generalStats.open` | Number of open incidents |
+| `generalStats.closed` | Number of closed incidents |
+| `generalStats.total` | Total number of incidents |
+| `resolution.times` | Statistical resolution time metrics |
+| `resolution.sla` | SLA compliance metrics |
+| `trend.series` | Values used for time-based charting |
+| `trend.labels` | Dates corresponding to the trend series |
+
+---
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 response indicates failure.
+
+---
+
+## Authentication
+
+A valid JWT token must be included in the Authorization header.
+
+---
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/departments/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/departments/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
+
+console.log(await res.json());
+```
+
+---
+
+## Notes
+
+- Dates must follow the `YYYY-MM-DD` format.
+- Trend series and labels can be used directly to plot charts for each department.
