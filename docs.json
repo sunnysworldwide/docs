@@ -99,7 +99,7 @@
         "groups": [
           {
             "group": "Setup & Integration",
-            "pages": ["email-meter/signin", "email-meter/webhook"]
+            "pages": ["email-meter/webhook"]
           },
           {
             "group": "Email Statistics",
@@ -153,7 +153,8 @@
               "hubspot-tickets/stats/incident-trend",
               "hubspot-tickets/stats/top-affiliates-involved",
               "hubspot-tickets/stats/top-categories",
-              "hubspot-tickets/stats/compliments-count"
+              "hubspot-tickets/stats/compliments-count",
+              "hubspot-tickets/stats/geo-map-filters"
             ]
           }
         ]
