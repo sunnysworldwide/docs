@@ -22,29 +22,16 @@ Retrieve aggregated data showing which affiliates were involved in incidents dur
 
 | Header          | Value              | Description                          |
 | ---------------- | ------------------ | ------------------------------------ |
-| `Content-Type`   | `application/json` | Required for sending JSON body       |
 | `Authorization`  | `Bearer <token>`   | User authentication token            |
 
-### Request Body
-
-```json
-{
-  "user": {
-    "id": "string",
-    "role": "string"
-  }
-}
-```
-
-> **Note:** The `user` object is optional and depends on the authenticated context.
+> **Note:** No request body is required.
 
 ## Response
 
-### Success Response (200)
+### Success Response (HTTP 200)
 
 ```json
 {
-  "success": true,
   "message": "",
   "data": {
     "affiliates": []
@@ -54,48 +41,41 @@ Retrieve aggregated data showing which affiliates were involved in incidents dur
 
 - `affiliates`: An array of affiliates involved in incidents during the date range.
 
-### Error Response
+### Error Response (HTTP 400–500)
 
 ```json
 {
-  "success": false,
-  "message": "Error message",
-  "service": "/hubspot/stats/top-affiliates-involved/:startDate/:endDate",
-  "http": "GET"
+  "message": "Invalid params",
+  "data": {}
 }
 ```
 
+> Any non-200 status code represents an error.
+
 ## Authentication
 
-This endpoint requires a valid authentication token provided via the `Authorization` header.
+This endpoint requires a valid authentication token via the `Authorization` header.  
+User details are internally populated by the authentication middleware — **the client does not send user data**.
 
 ## Example Request (cURL)
 
 ```bash
 curl -X GET "https://yourdomain.com/hubspot/stats/top-affiliates-involved/2025-11-01/2025-11-15" \
--H "Content-Type: application/json" \
--H "Authorization: Bearer YOUR_TOKEN" \
--d '{
-  "user": {
-    "id": "123",
-    "role": "admin"
-  }
-}'
+-H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## Example Request (JavaScript - fetch)
 
 ```javascript
-const response = await fetch("/hubspot/stats/top-affiliates-involved/2025-11-01/2025-11-15", {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer YOUR_TOKEN"
-  },
-  body: JSON.stringify({
-    user: { id: "123", role: "admin" }
-  })
-});
+const response = await fetch(
+  "/hubspot/stats/top-affiliates-involved/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
 
 const data = await response.json();
 console.log(data);
@@ -103,6 +83,6 @@ console.log(data);
 
 ## Notes
 
-- The endpoint returns an empty array if no affiliates were involved in the given date range.
-- The internal aggregation logic is handled server-side.
-- All dates must follow `YYYY-MM-DD` format.
+- The endpoint returns an empty array when no affiliates are found.
+- Date format must be `YYYY-MM-DD`.
+- Success is based solely on HTTP status code.
