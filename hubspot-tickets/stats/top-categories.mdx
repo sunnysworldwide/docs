@@ -1,0 +1,86 @@
+---
+title: "Top Categories"
+description: "Retrieve the top categories for incidents within a specified date range."
+---
+
+# Top Categories
+
+Retrieve aggregated data showing the most frequently occurring incident categories within a given date range.
+
+## Endpoint
+
+`GET /hubspot/stats/top-categories/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> **Note:** This endpoint does not accept a request body.
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "categories": []
+  }
+}
+```
+
+- `categories`: List of categories ranked or aggregated for the date range.
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 status code indicates an error.
+
+## Authentication
+
+Provide a valid token using the `Authorization` header.
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/top-categories/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const response = await fetch(
+  "/hubspot/stats/top-categories/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
+
+const data = await response.json();
+console.log(data);
+```
+
+## Notes
+
+- Dates must follow `YYYY-MM-DD` format.
+- The endpoint returns an empty array when no categories are found.

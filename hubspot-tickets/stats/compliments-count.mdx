@@ -1,0 +1,88 @@
+---
+title: "Compliments Count"
+description: "Retrieve total tickets, total compliments, and compliment percentage for a specified date range."
+---
+
+# Compliments Count
+
+Returns aggregated counts related to compliments within a given date range.
+
+## Endpoint
+
+`GET /hubspot/stats/compliments-count/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
+
+### Request Headers
+
+| Header          | Value              | Description              |
+| ---------------- | ------------------ | ------------------------ |
+| `Authorization`  | `Bearer <token>`   | Authentication token     |
+
+> **Note:** This endpoint does not accept a request body.
+
+## Response
+
+### Success Response (HTTP 200)
+
+```json
+{
+  "message": "",
+  "data": {
+    "total": 0,
+    "compliments": 0,
+    "percentage": 0
+  }
+}
+```
+
+- `total`: Total number of tickets in the given date range  
+- `compliments`: Number of compliment-type tickets  
+- `percentage`: Compliments expressed as a percentage of total tickets  
+
+### Error Response (HTTP 400–500)
+
+```json
+{
+  "message": "Invalid params",
+  "data": {}
+}
+```
+
+> Any non-200 status code indicates an error.
+
+## Authentication
+
+Provide a valid token using the `Authorization` header.
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/compliments-count/2025-11-01/2025-11-15" \
+-H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const res = await fetch(
+  "/hubspot/stats/compliments-count/2025-11-01/2025-11-15",
+  {
+    method: "GET",
+    headers: { "Authorization": "Bearer YOUR_TOKEN" }
+  }
+);
+
+const data = await res.json();
+console.log(data);
+```
+
+## Notes
+
+- Dates must be provided in `YYYY-MM-DD` format.
+- Percentages are computed based on the compliment count relative to the total tickets.
