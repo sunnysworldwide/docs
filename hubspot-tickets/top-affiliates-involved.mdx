@@ -1,0 +1,108 @@
+---
+title: "Top Affiliates Involved"
+description: "Retrieve a list of top affiliates involved in incidents within a specified date range."
+---
+
+# Top Affiliates Involved
+
+Retrieve aggregated data showing which affiliates were involved in incidents during the selected date range.
+
+## Endpoint
+
+`GET /hubspot/stats/top-affiliates-involved/:startDate/:endDate`
+
+### URL Parameters
+
+| Parameter   | Type   | Required | Description                               |
+| ----------- | ------ | -------- | ------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)       |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)         |
+
+### Request Headers
+
+| Header          | Value              | Description                          |
+| ---------------- | ------------------ | ------------------------------------ |
+| `Content-Type`   | `application/json` | Required for sending JSON body       |
+| `Authorization`  | `Bearer <token>`   | User authentication token            |
+
+### Request Body
+
+```json
+{
+  "user": {
+    "id": "string",
+    "role": "string"
+  }
+}
+```
+
+> **Note:** The `user` object is optional and depends on the authenticated context.
+
+## Response
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "",
+  "data": {
+    "affiliates": []
+  }
+}
+```
+
+- `affiliates`: An array of affiliates involved in incidents during the date range.
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "message": "Error message",
+  "service": "/hubspot/stats/top-affiliates-involved/:startDate/:endDate",
+  "http": "GET"
+}
+```
+
+## Authentication
+
+This endpoint requires a valid authentication token provided via the `Authorization` header.
+
+## Example Request (cURL)
+
+```bash
+curl -X GET "https://yourdomain.com/hubspot/stats/top-affiliates-involved/2025-11-01/2025-11-15" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer YOUR_TOKEN" \
+-d '{
+  "user": {
+    "id": "123",
+    "role": "admin"
+  }
+}'
+```
+
+## Example Request (JavaScript - fetch)
+
+```javascript
+const response = await fetch("/hubspot/stats/top-affiliates-involved/2025-11-01/2025-11-15", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_TOKEN"
+  },
+  body: JSON.stringify({
+    user: { id: "123", role: "admin" }
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## Notes
+
+- The endpoint returns an empty array if no affiliates were involved in the given date range.
+- The internal aggregation logic is handled server-side.
+- All dates must follow `YYYY-MM-DD` format.
