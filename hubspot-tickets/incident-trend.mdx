@@ -1,12 +1,15 @@
 ---
-title: "Incidents Trend Stats"
-description: "Retrieve the trend of incidents (tickets) within a specified date range."
-openapi: 'GET /hubspot/stats/incidents-trend/:startDate/:endDate'
+title: "Incidents Trend"
+description: "Retrieve the daily trend of incidents (tickets) within a specified date range."
 ---
 
-# Incidents Trend Stats
+# Incidents Trend
 
-Fetch the trend of incidents (tickets) for a given date range. The endpoint returns the labels (dates) and series (number of tickets per date) to visualize trends.
+Retrieve the trend of incidents for a given date range.  
+This endpoint returns:
+
+- `labels`: an array of dates in the interval  
+- `series`: number of incidents for each corresponding date  
 
 ## Endpoint
 
@@ -14,38 +17,26 @@ Fetch the trend of incidents (tickets) for a given date range. The endpoint retu
 
 ### URL Parameters
 
-| Parameter   | Type   | Required | Description                       |
-| ----------- | ------ | -------- | --------------------------------- |
-| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD) |
-| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)   |
+| Parameter   | Type   | Required | Description                                 |
+| ----------- | ------ | -------- | -------------------------------------------- |
+| `startDate` | string | ✅       | Start date of the range (YYYY-MM-DD)         |
+| `endDate`   | string | ✅       | End date of the range (YYYY-MM-DD)           |
 
 ### Request Headers
 
-| Header          | Value                    | Description                          |
-| --------------- | ------------------------ | ------------------------------------ |
-| `Content-Type`  | `application/json`       | Required for sending JSON body       |
-| `Authorization` | `Bearer <token>`         | User authentication token            |
+| Header          | Value              | Description                          |
+| ---------------- | ------------------ | ------------------------------------ |
+| `Authorization`  | `Bearer <token>`   | User authentication token            |
 
-### Request Body
-
-```json
-{
-  "user": {
-    "id": "string",
-    "role": "string"
-  }
-}
-```
-
-> **Note:** `user` is optional and depends on the authenticated context.
+> **Note:** No request body is required.  
+> User context is supplied internally by the authentication middleware.
 
 ## Response
 
-### Success Response (200)
+### Success Response (HTTP 200)
 
 ```json
 {
-  "success": true,
   "message": "",
   "data": {
     "labels": ["2025-11-01", "2025-11-02", "2025-11-03"],
@@ -54,48 +45,44 @@ Fetch the trend of incidents (tickets) for a given date range. The endpoint retu
 }
 ```
 
-### Error Response
+- `labels`: Dates between `startDate` and `endDate`
+- `series`: Number of incidents created on each date
+
+### Error Response (HTTP 400–500)
 
 ```json
 {
-  "success": false,
-  "message": "Error message",
-  "service": "/hubspot/stats/incidents-trend/:startDate/:endDate",
-  "http": "GET"
+  "message": "Invalid params",
+  "data": {}
 }
 ```
 
+> Any non-200 status code indicates an error.
+
 ## Authentication
 
-This endpoint requires the user to be authenticated. Use the `Authorization` header with a valid token.
+This endpoint requires user authentication via `Authorization: Bearer <token>`.  
+No user data should be sent — it is populated internally.
 
 ## Example Request (cURL)
 
 ```bash
-curl -X GET "https://yourdomain.com/hubspot/stats/incidents-trend/2025-11-01/2025-11-03" \
--H "Content-Type: application/json" \
--H "Authorization: Bearer YOUR_TOKEN" \
--d '{
-  "user": {
-    "id": "123",
-    "role": "admin"
-  }
-}'
+curl -X GET "https://yourdomain.com/hubspot/stats/incidents-trend/2025-11-01/2025-11-07" \
+-H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## Example Request (JavaScript - fetch)
 
 ```javascript
-const response = await fetch("/hubspot/stats/incidents-trend/2025-11-01/2025-11-03", {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer YOUR_TOKEN"
-  },
-  body: JSON.stringify({
-    user: { id: "123", role: "admin" }
-  })
-});
+const response = await fetch(
+  "/hubspot/stats/incidents-trend/2025-11-01/2025-11-07",
+  {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer YOUR_TOKEN"
+    }
+  }
+);
 
 const data = await response.json();
 console.log(data);
@@ -103,6 +90,6 @@ console.log(data);
 
 ## Notes
 
-- The `series` is calculated based on ticket creation dates.
-- Dates without any tickets will have a count of `0`.
-- The `trend` object is generated internally and mapped to `labels` and `series`.
+- Dates must follow `YYYY-MM-DD` format.
+- Dates without incidents will appear in `labels` with `0` count in `series`.
+- Trend calculation is computed server-side using the ticket creation date.
