@@ -149,7 +149,10 @@
           },
           {
             "group": "Stats",
-            "pages": ["hubspot-tickets/incident-trend", "hubspot-tickets/top-affiliates-involved"]
+            "pages": [
+              "hubspot-tickets/stats/incident-trend",
+              "hubspot-tickets/stats/top-affiliates-involved"
+            ]
           }
         ]
       },
