@@ -1,0 +1,360 @@
+---
+title: Globe Component
+description: A 3D interactive globe visualization component built with Three.js and React Three Fiber
+---
+
+The Globe component is a highly customizable 3D interactive globe visualization built with Three.js and React Three Fiber. It supports various features like country polygons, arcs, points, labels, and atmospheric effects.
+
+## Features
+
+- Interactive 3D globe with smooth rotation and zoom controls
+- Customizable appearance (colors, lighting, atmosphere)
+- Support for GeoJSON data overlays
+- Animated arcs between points on the globe
+- Points of interest with labels
+- Atmospheric glow effects
+- Performance optimizations for large datasets
+
+## Installation
+
+```bash
+npm install three @react-three/fiber @react-three/drei three-globe
+```
+
+## Basic Usage
+
+```tsx
+import { Canvas } from '@react-three/fiber';
+import { Globe } from './Globe';
+
+function App() {
+  return (
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <Canvas>
+        <Globe />
+      </Canvas>
+    </div>
+  );
+}
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `globeConfig` | `GlobeConfig` | See below | Configuration object for the globe's appearance and behavior |
+| `data` | `Position[]` | `[]` | Array of positions for arcs and points |
+| `isVisible` | `boolean` | `true` | Toggle visibility of the globe |
+| `controlsRef` | `React.RefObject` | `undefined` | Ref to access the camera controls |
+| `overlayGeoJson` | `any` | `undefined` | GeoJSON data to overlay on the globe |
+
+### GlobeConfig
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `pointSize` | `number` | `1` | Size of points on the globe |
+| `globeColor` | `string` | `"#1B1B1B"` | Base color of the globe |
+| `showAtmosphere` | `boolean` | `true` | Show atmospheric glow |
+| `atmosphereColor` | `string` | `"#ffffff"` | Color of the atmosphere |
+| `atmosphereAltitude` | `number` | `0.2` | Thickness of the atmosphere |
+| `emissive` | `string` | `"#000000"` | Emissive color of the globe |
+| `emissiveIntensity` | `number` | `0.1` | Intensity of the emissive effect |
+| `shininess` | `number` | `0.9` | Shininess of the globe material |
+| `polygonColor` | `string` | `"#1B1B1B"` | Color of country polygons |
+| `ambientLight` | `string` | `"#ffffff"` | Ambient light color |
+| `directionalLeftLight` | `string` | `"#ffffff"` | Left directional light color |
+| `directionalTopLight` | `string` | `"#ffffff"` | Top directional light color |
+| `pointLight` | `string` | `"#ffffff"` | Point light color |
+| `arcTime` | `number` | `2000` | Duration of arc animations in ms |
+| `arcLength` | `number` | `0.9` | Length of arcs as a percentage |
+| `rings` | `number` | `1` | Number of rings to display |
+| `maxRings` | `number` | `3` | Maximum number of rings |
+| `initialPosition` | `{ lat: number, lng: number }` | `{ lat: 0, lng: 0 }` | Initial camera position |
+| `autoRotate` | `boolean` | `true` | Enable auto-rotation |
+| `autoRotateSpeed` | `number` | `0.5` | Speed of auto-rotation |
+| `enableZoom` | `boolean` | `true` | Enable zoom controls |
+| `zoomSpeed` | `number` | `0.8` | Zoom speed |
+| `minDistance` | `number` | `200` | Minimum zoom distance |
+| `maxDistance` | `number` | `1000` | Maximum zoom distance |
+| `enableDamping` | `boolean` | `true` | Enable damping for smooth movement |
+| `dampingFactor` | `number` | `0.2` | Damping factor |
+| `hexPolygonResolution` | `number` | `3` | Resolution of hex polygons |
+| `maxPolygonFeatures` | `number` | `100` | Maximum number of polygon features to render |
+| `maxDPR` | `number` | `1.5` | Maximum device pixel ratio |
+| `showArcs` | `boolean` | `true` | Show arcs between points |
+| `showPoints` | `boolean` | `true` | Show points on the globe |
+| `showLabels` | `boolean` | `true` | Show labels for points |
+| `showRings` | `boolean` | `true` | Show rings around points |
+| `autoRotateDisableDistance` | `number` | `300` | Disable auto-rotation when zoomed in closer than this distance |
+| `rotateSpeed` | `number` | `1` | Base rotation speed |
+| `cursorSlowMultiplier` | `number` | `0.5` | Multiplier for cursor movement speed when zoomed in |
+
+## Examples
+
+### Basic Globe with Custom Colors
+
+```tsx
+<Globe
+  globeConfig={{
+    globeColor: "#062056",
+    showAtmosphere: true,
+    atmosphereColor: "#FFFFFF",
+    atmosphereAltitude: 0.15,
+    polygonColor: "rgba(255,255,255,0.7)",
+    showRings: true,
+    rings: 3,
+    maxRings: 3,
+  }}
+  data={[
+    {
+      order: 1,
+      startLat: 40.7128,
+      startLng: -74.0060,
+      endLat: 51.5074,
+      endLng: -0.1278,
+      arcAlt: 0.2,
+      color: "#FF6B6B"
+    }
+  ]}
+/>
+```
+
+### Interactive Globe with Click Events
+
+```tsx
+function InteractiveGlobe() {
+  const [clickedPoint, setClickedPoint] = useState(null);
+  
+  const handleGlobeClick = (event) => {
+    // Get the clicked point in 3D space
+    const point = event.point;
+    // Convert to lat/lng
+    const latLng = cartesianToLatLng(point.x, point.y, point.z);
+    setClickedPoint(latLng);
+  };
+
+  return (
+    <div>
+      <Canvas onClick={handleGlobeClick}>
+        <Globe 
+          globeConfig={{
+            // Your config
+          }}
+        />
+      </Canvas>
+      {clickedPoint && (
+        <div style={{ position: 'absolute', top: 20, left: 20, background: 'white', padding: '10px' }}>
+          Clicked at: {clickedPoint.lat.toFixed(2)}, {clickedPoint.lng.toFixed(2)}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Performance Considerations
+
+- For large datasets, consider using `maxPolygonFeatures` to limit the number of rendered polygons
+- Adjust `hexPolygonResolution` to balance quality and performance
+- Use `maxDPR` to control rendering quality on high-DPI displays
+- Disable unnecessary features (arcs, rings, labels) when not needed
+
+## Dependencies
+
+- three
+- @react-three/fiber
+- @react-three/drei
+- three-globe
+
+## Centroid Worker
+
+The Globe component uses a Web Worker (`centroid.worker.ts`) to efficiently calculate centroids for GeoJSON features in a background thread, ensuring smooth performance even with complex geographical data.
+
+### Purpose
+
+The centroid worker is responsible for:
+- Processing GeoJSON features (Polygon and MultiPolygon) in parallel
+- Calculating the centroid (geometric center) for each feature
+- Extracting relevant properties for labeling
+- Maintaining performance by offloading CPU-intensive calculations from the main thread
+
+### How It Works
+
+1. **Input**: The worker receives GeoJSON features with the following structure:
+   ```typescript
+   {
+     features: Array<{
+       type: 'Feature',
+       geometry: {
+         type: 'Polygon' | 'MultiPolygon',
+         coordinates: number[][][] | number[][][][]
+       },
+       properties: {
+         name?: string,
+         ADMIN?: string,
+         iso_a2?: string,
+         count?: number,
+         [key: string]: any
+       }
+     }>,
+     maxLabels?: number // Optional limit on number of labels to return
+   }
+   ```
+
+2. **Processing**:
+   - For each feature, it extracts the name from various possible property fields (`name`, `ADMIN`, `iso_a2`)
+   - Calculates the centroid by averaging all coordinate points of the polygon's exterior ring
+   - Handles both Polygon and MultiPolygon geometry types
+   - Preserves the `count` property if present for data visualization
+
+3. **Output**: Returns an array of label objects:
+   ```typescript
+   Array<{
+     lat: number,      // Latitude of the centroid
+     lng: number,      // Longitude of the centroid
+     country: string,  // Extracted name of the region
+     count?: number    // Optional count from properties
+   }>
+   ```
+
+### Performance Considerations
+
+- **Web Worker**: Runs in a separate thread, preventing UI freezes during calculations
+- **Efficient Calculation**: Uses simple averaging for centroids, which is fast and sufficient for most visualization purposes
+- **Error Handling**: Includes try-catch blocks to handle malformed GeoJSON gracefully
+- **Debugging**: Contains debug logging that can be enabled for troubleshooting
+
+### Integration with Globe Component
+
+The Globe component uses this worker to position labels and interactive elements on the globe. The centroids help in:
+- Placing country/region labels at appropriate positions
+- Positioning interactive markers for regions
+- Enabling hover and click interactions with geographical features
+
+### Customization
+
+You can extend the worker to:
+1. Add more sophisticated centroid calculation methods
+2. Include additional properties in the output
+3. Implement custom filtering or transformation of features
+4. Add support for additional GeoJSON geometry types
+
+## HubSpot GeoJSON Integration
+
+The Globe component can visualize GeoJSON data from HubSpot's API to create interactive heatmaps. Here's how to integrate it:
+
+### Fetching and Using HubSpot GeoJSON
+
+1. First, fetch the GeoJSON data from the HubSpot API:
+
+```tsx
+import { useEffect, useState } from 'react';
+
+function HubSpotGlobe() {
+  const [geoJsonData, setGeoJsonData] = useState(null);
+
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const response = await fetch(
+          'https://yourdomain.com/hubspot/stats/geo-map/2025-11-01/2025-11-15',
+          {
+            headers: {
+              'Authorization': 'Bearer YOUR_TOKEN_HERE'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Failed to fetch GeoJSON data');
+        
+        const data = await response.json();
+        setGeoJsonData(data.data.geojson);
+      } catch (error) {
+        console.error('Error fetching GeoJSON:', error);
+      }
+    };
+
+    fetchGeoData();
+  }, []);
+
+  // Function to determine color based on incident count
+  const getColorForCount = (count) => {
+    // Customize these thresholds based on your data
+    if (count > 15) return '#ff0000';  // Red for high density
+    if (count > 5) return '#ffa500';   // Orange for medium-high
+    if (count > 0) return '#ffff00';   // Yellow for low
+    return '#00ff00';                  // Green for none
+  };
+
+  // Process GeoJSON features to add custom styling
+  const processedGeoJson = geoJsonData ? {
+    ...geoJsonData,
+    features: geoJsonData.features.map(feature => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        // Add custom styling based on your data
+        color: getColorForCount(feature.properties.count),
+        // Add tooltip content
+        tooltip: `${feature.properties.name}: ${feature.properties.count} incidents`,
+      }
+    }))
+  } : null;
+
+  return (
+    <div style={{ width: '100%', height: '100vh' }}>
+      <Canvas>
+        <Globe 
+          overlayGeoJson={processedGeoJson}
+          globeConfig={{
+            // Customize globe appearance
+            globeColor: '#0a1128',
+            showAtmosphere: true,
+            atmosphereColor: 'rgba(0, 100, 255, 0.2)',
+            polygonColor: (feature) => feature?.properties?.color || '#1B1B1B',
+            // Other config options...
+          }}
+        />
+      </Canvas>
+    </div>
+  );
+}
+```
+
+### Customizing the Heatmap
+
+You can customize how the GeoJSON data appears on the globe using these approaches:
+
+1. **Color Scaling**: Modify the `getColorForCount` function to adjust the color thresholds based on your data distribution.
+
+2. **Tooltips**: The example includes a basic tooltip showing the region name and incident count. You can enhance this with more details as needed.
+
+3. **Interactive Features**: Add click handlers to regions to show detailed information or navigate to related views.
+
+4. **Animation**: Add transitions when data updates to create smooth visualizations.
+
+### Performance Considerations
+
+- For large datasets, consider aggregating data at a higher geographic level (e.g., country instead of state).
+- Use `maxPolygonFeatures` to limit the number of features rendered at once.
+- Implement data caching to avoid unnecessary API calls.
+
+## Related Utilities
+
+The component includes several utility functions in the `functions` directory:
+
+- `cartesianToLatLng`: Convert 3D coordinates to latitude/longitude
+- `computeCentroidsSync`: Calculate centroids for GeoJSON features
+- `coordHashForFeature`: Generate a hash for feature coordinates
+- `darkenColor`: Darken a hex or RGB color
+- `genRandomNumbers`: Generate random numbers within a range
+- `getFeatureId`: Get a unique ID for a GeoJSON feature
+- `haversineKm`: Calculate distance between two points using Haversine formula
+- `hexToRgb`: Convert hex color to RGB
+- `latLngToCartesian`: Convert latitude/longitude to 3D coordinates
+- `pointInPolygonFeature`: Check if a point is inside a polygon feature
+- `pointInRing`: Check if a point is inside a ring
+
+## Browser Support
+
+The Globe component uses WebGL for rendering and requires a modern browser with WebGL support.

@@ -11,6 +11,17 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Components",
+        "groups": [
+          {
+            "group": "3D Visualizations",
+            "pages": [
+              "components/globe"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Overview",
         "groups": [
           {
