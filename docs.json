@@ -11,6 +11,18 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Geocoding",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "geocoding/index",
+              "geocoding/hubspot-integration"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Components",
         "groups": [
           {

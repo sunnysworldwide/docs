@@ -1,0 +1,235 @@
+---
+title: 'Geocoding API'
+description: 'Convert addresses and location names into geographic coordinates'
+openapi: 'GET /geo-locations/address/{address}'
+---
+
+The Geocoding API provides powerful location-based services including address geocoding, reverse geocoding, and airport code lookups. It integrates with Google Maps Geocoding API and includes a comprehensive airport database for quick lookups.
+
+## Features
+
+- **Address Geocoding**: Convert addresses into geographic coordinates
+- **Airport Code Lookup**: Find airport locations by IATA or ICAO codes
+- **Structured Responses**: Consistent response format with detailed location information
+- **Global Coverage**: Supports locations worldwide
+
+## Authentication
+
+All requests must include a valid JWT token in the `Authorization` header:
+
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description                                      |
+|-----------|--------|----------|--------------------------------------------------|
+| address   | string | Yes      | The address or location to geocode (e.g., "1600 Amphitheatre Parkway, Mountain View, CA" or "JFK") |
+
+## Response
+
+### 200 OK - Successful geocoding
+
+```json
+{
+  "message": "",
+  "data": {
+    "address": {
+      "city": "Mountain View",
+      "state": "California",
+      "country": "US",
+      "lat": 37.4223878,
+      "long": -122.0841877
+    }
+  }
+}
+```
+
+### 200 OK - Airport Code Lookup
+
+```json
+{
+  "message": "",
+  "data": {
+    "address": {
+      "city": "New York",
+      "state": "New York",
+      "country": "US",
+      "lat": 40.6413111,
+      "long": -73.7781391
+    }
+  }
+}
+```
+
+### 400 Bad Request - Invalid Input
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Address parameter is required"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "code": "AUTH_ERROR",
+    "message": "Invalid or missing authentication token"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "No results found for the specified address"
+  }
+}
+```
+
+### 429 Too Many Requests
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Please try again later."
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "code": "SERVER_ERROR",
+    "message": "An unexpected error occurred"
+  }
+}
+```
+
+## Endpoints
+
+### Geocode an Address
+
+Converts a human-readable address into geographic coordinates and structured location data.
+
+```http
+GET /geo-locations/address/{address}
+```
+
+#### Examples
+
+### Geocoding an Address
+
+```bash
+curl -X GET \
+  'https://api-v1.compass.com/geo-locations/address/1600+Amphitheatre+Parkway,+Mountain+View,+CA' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN'
+```
+
+### Looking up an Airport by Code
+
+```bash
+curl -X GET \
+  'https://api-v1.compass.com/geo-locations/address/JFK' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN'
+```
+
+## Response Format
+
+All successful responses follow this structure:
+
+| Field       | Type   | Description                          |
+|-------------|--------|--------------------------------------|
+| message     | string | Status message (empty if successful) |
+| data        | object | Response data                        |
+| - address   | object | Location information                 |
+|   - city    | string | City name                            |
+|   - state   | string | State or region name                 |
+|   - country | string | Two-letter country code              |
+|   - lat     | number | Latitude coordinate                  |
+|   - long    | number | Longitude coordinate                 |
+
+## Error Handling
+
+Errors follow a standard format:
+
+```json
+{
+  "message": "Error message",
+  "error": {
+    "status": 400,
+    "errorMessage": "Detailed error message"
+  }
+}
+```
+
+### Common Status Codes
+
+| Status Code | Description                     |
+|-------------|---------------------------------|
+| 200         | Success                         |
+| 400         | Bad Request - Invalid input     |
+| 401         | Unauthorized - Invalid token    |
+| 404         | Not Found - Address not found   |
+| 500         | Internal Server Error           |
+
+## Rate Limiting
+
+The API is rate limited to protect service quality. If you exceed the rate limit, you'll receive a `429 Too Many Requests` response.
+
+## Best Practices
+
+1. **Cache results** when possible to reduce API calls
+2. **Handle errors gracefully** and implement retry logic for transient failures
+3. **Validate addresses** before sending them to the API
+4. **Use HTTPS** for all requests to ensure data security
+
+## Integration Example
+
+```javascript
+async function geocodeAddress(address) {
+  try {
+    const response = await fetch(
+      `https://your-api-domain.com/geo-locations/address/${encodeURIComponent(address)}`,
+      {
+        headers: {
+          'Authorization': 'Bearer YOUR_JWT_TOKEN'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.data.address;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    throw error;
+  }
+}
+
+// Example usage
+geocodeAddress('JFK')
+  .then(location => console.log('Airport location:', location))
+  .catch(console.error);
+```
+
+## Support
+
+For questions or issues, please contact [dev@sunnylimo.com](mailto:dev@sunnylimo.com).
