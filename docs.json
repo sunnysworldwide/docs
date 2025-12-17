@@ -56,6 +56,17 @@
         ]
       },
       {
+        "tab": "Events & Venues",
+        "groups": [
+          {
+            "group": "Calendar Guide",
+            "pages": [
+              "docs/calendar/index"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Authentication",
         "groups": [
           {
